@@ -104,6 +104,56 @@ pub fn send_wol(id: String) {
     }
 }
 
+/// Team edition: the LAN address of a desktop found by discovery, as `ip:port` for the
+/// direct-access port. `None` if no discovered desktop has this ID.
+pub fn resolve_peer_addr(id: &str) -> Option<String> {
+    let peers = config::LanPeers::load().peers;
+    let peer = peers.iter().find(|p| p.id == id)?;
+    // Prefer IPv4: it is what LAN discovery normally answers on and what allowed-IP lists use.
+    let mut ips: Vec<IpAddr> = peer
+        .ip_mac
+        .keys()
+        .filter_map(|ip| ip.parse::<IpAddr>().ok())
+        .collect();
+    ips.sort_by_key(|ip| !ip.is_ipv4());
+    let ip = ips.into_iter().next()?;
+    let port = RENDEZVOUS_PORT + 2;
+    Some(match ip {
+        IpAddr::V4(v4) => format!("{v4}:{port}"),
+        IpAddr::V6(v6) => format!("[{v6}]:{port}"),
+    })
+}
+
+/// Team edition: splits `ids` into (online, offline) using the last LAN discovery result.
+/// Plain IP addresses are reported online when a discovered desktop answered from that IP.
+pub fn online_states(ids: &[String]) -> (Vec<String>, Vec<String>) {
+    let peers = config::LanPeers::load().peers;
+    let mut onlines = Vec::new();
+    let mut offlines = Vec::new();
+    for id in ids {
+        let online = peers.iter().any(|p| {
+            p.online && (p.id == *id || p.ip_mac.keys().any(|ip| id_is_ip(id, ip)))
+        });
+        if online {
+            onlines.push(id.clone());
+        } else {
+            offlines.push(id.clone());
+        }
+    }
+    (onlines, offlines)
+}
+
+/// True if `id` names the address `ip`, with or without a port.
+fn id_is_ip(id: &str, ip: &str) -> bool {
+    if id == ip {
+        return true;
+    }
+    match id.parse::<SocketAddr>() {
+        Ok(addr) => addr.ip().to_string() == ip,
+        Err(_) => false,
+    }
+}
+
 #[inline]
 fn get_broadcast_port() -> u16 {
     (RENDEZVOUS_PORT + 3) as _

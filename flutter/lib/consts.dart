@@ -6,6 +6,14 @@ import 'package:get/get.dart';
 
 export 'common/widgets/keyboard_shortcuts/shortcut_constants.dart';
 
+/// Team edition: LAN-only, no passwords, no accounts, no ID/relay/API/update servers.
+/// Must match `base::team::LAN_ONLY` in Rust.
+const bool kTeamLanOnly = true;
+const String kTeamAllowedIpsTip =
+    "Only computers whose IP is in this list can connect to this desktop, without a password. If the list is empty, nobody can connect.";
+const String kTeamDeskTip =
+    "Team members connect to this desktop by its IP address, hostname, or ID from the LAN list. Only allowed IPs can connect.";
+
 const int kMaxVirtualDisplayCount = 4;
 const int kAllVirtualDisplay = -1;
 

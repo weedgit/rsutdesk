@@ -197,10 +197,21 @@ void changeWhiteList({Function()? callback}) async {
   final isOptFixed = isOptionFixed(kOptionWhitelist);
   gFFI.dialogManager.show((setState, close, context) {
     return CustomAlertDialog(
-      title: Text(translate("IP Whitelisting")),
+      title: Text(translate(kTeamLanOnly ? "Allowed IPs" : "IP Whitelisting")),
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (kTeamLanOnly) ...[
+            Text(translate(kTeamAllowedIpsTip)),
+            const SizedBox(
+              height: 8.0,
+            ),
+            Text(
+                '${translate("This machine's IP")}: ${bind.mainGetLocalIps()}'),
+            const SizedBox(
+              height: 8.0,
+            ),
+          ],
           Text(translate("whitelist_sep")),
           const SizedBox(
             height: 8.0,
@@ -255,6 +266,24 @@ void changeWhiteList({Function()? callback}) async {
               } else {
                 final ips =
                     newWhiteListField.trim().split(RegExp(r"[\s,;\n]+"));
+                // Team edition: validate with the same Rust code that enforces the list,
+                // which also accepts `*` (allow everyone).
+                if (kTeamLanOnly) {
+                  final invalid =
+                      bind.mainInvalidAllowedIps(list: ips.join(','));
+                  if (invalid.isNotEmpty) {
+                    setState(() {
+                      msg = "${translate("Invalid IP")} $invalid";
+                      isInProgress = false;
+                    });
+                    return;
+                  }
+                  await bind.mainSetOption(
+                      key: kOptionWhitelist, value: ips.join(','));
+                  callback?.call();
+                  close();
+                  return;
+                }
                 // test ip
                 final ipMatch = RegExp(
                     r"^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]?|0)\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]?|0)\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]?|0)\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]?|0)(\/([1-9]|[1-2][0-9]|3[0-2])){0,1}$");

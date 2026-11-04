@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common.dart';
 import 'package:flutter_hbb/common/widgets/animated_rotation_widget.dart';
 import 'package:flutter_hbb/common/widgets/custom_password.dart';
+import 'package:flutter_hbb/common/widgets/dialog.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/pages/connection_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_setting_page.dart';
@@ -79,7 +80,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     final isIncomingOnly = bind.isIncomingOnly();
     final isOutgoingOnly = bind.isOutgoingOnly();
     final children = <Widget>[
-      if (!isOutgoingOnly) buildPresetPasswordWarning(),
+      if (!isOutgoingOnly && !kTeamLanOnly) buildPresetPasswordWarning(),
       if (bind.isCustomClient())
         Align(
           alignment: Alignment.center,
@@ -91,7 +92,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       ),
       buildTip(context),
       if (!isOutgoingOnly) buildIDBoard(context),
-      if (!isOutgoingOnly) buildPasswordBoard(context),
+      if (!isOutgoingOnly && !kTeamLanOnly) buildPasswordBoard(context),
+      if (!isOutgoingOnly && kTeamLanOnly) buildTeamAccessBoard(context),
       FutureBuilder<Widget>(
         future: Future.value(
             Obx(() => buildHelpCards(stateGlobal.updateUrl.value))),
@@ -278,6 +280,84 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
+  /// Team edition: instead of a password, show this machine's LAN IP (what others add to their
+  /// allowed lists) and this desktop's own allowed-IP list, with a button to edit it.
+  Widget buildTeamAccessBoard(BuildContext context) {
+    final labelStyle = TextStyle(
+        fontSize: 14,
+        color:
+            Theme.of(context).textTheme.titleLarge?.color?.withOpacity(0.5));
+    return StatefulBuilder(builder: (context, setState) {
+      final localIps = bind.mainGetLocalIps();
+      final allowed = bind
+          .mainGetOptionSync(key: kOptionWhitelist)
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+      final allowedText = allowed.isEmpty
+          ? translate("Nobody (add IPs to allow connections)")
+          : allowed.join(', ');
+      return Container(
+        margin: const EdgeInsets.only(left: 20.0, right: 16, top: 13, bottom: 13),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 2,
+              height: 84,
+              decoration: const BoxDecoration(color: MyTheme.accent),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 7),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(translate("IP address"), style: labelStyle),
+                    GestureDetector(
+                      onDoubleTap: () {
+                        Clipboard.setData(ClipboardData(text: localIps));
+                        showToast(translate("Copied"));
+                      },
+                      child: SelectableText(
+                        localIps.isEmpty ? '-' : localIps,
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ).marginOnly(bottom: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                            child: Text(translate("Allowed IPs"),
+                                style: labelStyle)),
+                        InkWell(
+                          child: Tooltip(
+                            message: translate("Edit"),
+                            child: Icon(Icons.edit,
+                                    color: Colors.grey, size: 18)
+                                .marginOnly(right: 4),
+                          ),
+                          onTap: () => changeWhiteList(
+                              callback: () => setState(() {})),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      allowedText,
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: allowed.isEmpty ? Colors.orange : null),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
   buildPasswordBoard(BuildContext context) {
     return ChangeNotifierProvider.value(
         value: gFFI.serverModel,
@@ -412,7 +492,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           ),
           if (!isOutgoingOnly)
             Text(
-              translate("desk_tip"),
+              translate(kTeamLanOnly ? kTeamDeskTip : "desk_tip"),
               overflow: TextOverflow.clip,
               style: Theme.of(context).textTheme.bodySmall,
             ),

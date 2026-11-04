@@ -902,8 +902,15 @@ async fn handle(data: Data, stream: &mut Connection) {
             }
         }
         Data::OnlineStatus(_) => {
-            let x = config::get_online_state();
-            let confirmed = Config::get_key_confirmed();
+            // Team edition: there is no ID server to be online with. "Ready" means the LAN
+            // listener is running, i.e. the service is not stopped.
+            let (x, confirmed) = if base::team::LAN_ONLY {
+                let stopped =
+                    config::option2bool("stop-service", &Config::get_option("stop-service"));
+                (if stopped { 0 } else { 1 }, true)
+            } else {
+                (config::get_online_state(), Config::get_key_confirmed())
+            };
             allow_err!(stream.send(&Data::OnlineStatus(Some((x, confirmed)))).await);
         }
         Data::ConfirmedKey(None) => {

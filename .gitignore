@@ -60,3 +60,7 @@ flutter/web/
 /third_party/libdrmtap/
 # Local git worktrees
 .worktrees/
+
+# Team edition: desktop only. Flutter may recreate these on build; never commit them.
+/flutter/android/
+/flutter/ios/

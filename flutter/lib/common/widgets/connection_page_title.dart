@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../common.dart';
+import '../../consts.dart';
 
 Widget getConnectionPageTitle(BuildContext context, bool isWeb) {
   return Row(
@@ -20,7 +21,9 @@ Widget getConnectionPageTitle(BuildContext context, bool isWeb) {
           ).marginOnly(right: 4),
           Tooltip(
             waitDuration: Duration(milliseconds: 300),
-            message: translate(isWeb ? "web_id_input_tip" : "id_input_tip"),
+            message: translate(kTeamLanOnly
+                ? "Type a desktop's IP address (e.g. 192.168.1.20), its hostname, or its ID from the LAN list. That desktop must have your IP in its allowed list."
+                : (isWeb ? "web_id_input_tip" : "id_input_tip")),
             child: Icon(
               Icons.help_outline_outlined,
               size: 16,

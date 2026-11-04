@@ -281,6 +281,9 @@ impl RendezvousMediator {
     }
 
     pub async fn start_all() {
+        if base::team::LAN_ONLY {
+            return Self::start_all_lan_only().await;
+        }
         crate::test_nat_type();
         if config::is_outgoing_only() {
             loop {
@@ -359,6 +362,39 @@ impl RendezvousMediator {
                 // https://github.com/rustdesk/rustdesk/issues/12233
                 sleep(0.033).await;
             }
+        }
+    }
+
+    /// Team edition: never contacts an ID, relay, API or update server. Accepts direct
+    /// connections on the LAN port (the allowed-IP list is checked per connection) and answers
+    /// LAN discovery so other team machines can find this desktop.
+    async fn start_all_lan_only() {
+        if config::is_outgoing_only() {
+            loop {
+                sleep(1.).await;
+            }
+        }
+        check_zombie();
+        let server = new_server();
+        let server_cloned = server.clone();
+        tokio::spawn(async move {
+            direct_server(server_cloned).await;
+        });
+        #[cfg(windows)]
+        {
+            // Give the listener a moment so the log shows it was kept off any LSP.
+            sleep(1.).await;
+            log::info!("{}", crate::platform::windows_lsp_bypass::status());
+        }
+        std::thread::spawn(move || {
+            allow_err!(super::lan::start_listening());
+        });
+        scrap::codec::test_av1();
+        loop {
+            if option2bool("stop-service", &Config::get_option("stop-service")) {
+                server.write().unwrap().close_connections();
+            }
+            sleep(1.).await;
         }
     }
 
@@ -1355,10 +1391,13 @@ async fn direct_server(server: ServerPtr) {
     let mut listener = None;
     let mut port = 0;
     loop {
-        let disabled = !option2bool(
-            OPTION_DIRECT_SERVER,
-            &Config::get_option(OPTION_DIRECT_SERVER),
-        ) || option2bool("stop-service", &Config::get_option("stop-service"));
+        // In the team edition direct access is the only way in, so it is always on.
+        let disabled = (!base::team::LAN_ONLY
+            && !option2bool(
+                OPTION_DIRECT_SERVER,
+                &Config::get_option(OPTION_DIRECT_SERVER),
+            ))
+            || option2bool("stop-service", &Config::get_option("stop-service"));
         if !disabled && listener.is_none() {
             port = get_direct_port();
             match hbb_common::tcp::listen_any(port as _).await {

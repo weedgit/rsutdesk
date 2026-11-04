@@ -23,6 +23,16 @@ pub use self::rendezvous_mediator::*;
 pub mod common;
 #[cfg(not(any(target_os = "ios")))]
 pub mod ipc;
+// Team edition: the desktop app is the Flutter UI only. The legacy Sciter UI below is kept
+// in the tree but is not supported; build with `python3 build.py --flutter`.
+#[cfg(all(
+    not(feature = "flutter"),
+    not(test),
+    any(target_os = "windows", target_os = "linux", target_os = "macos")
+))]
+compile_error!(
+    "This team edition supports only the Flutter desktop UI. Build with `--features flutter` (python3 build.py --flutter)."
+);
 #[cfg(not(any(
     target_os = "android",
     target_os = "ios",

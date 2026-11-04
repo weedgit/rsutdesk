@@ -134,7 +134,7 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
             if (!isIncomingOnly) startServiceWidget(),
             // ready && public
             // No need to show the guide if is custom client.
-            if (!isIncomingOnly) setupServerWidget(),
+            if (!isIncomingOnly && !kTeamLanOnly) setupServerWidget(),
           ],
         );
 
@@ -163,7 +163,7 @@ class _OnlineStatusWidgetState extends State<OnlineStatusWidget> {
               ? translate("connecting_status")
               : stateGlobal.svcStatus.value == SvcStatus.notReady
                   ? translate("not_ready_status")
-                  : translate('Ready'),
+                  : translate(kTeamLanOnly ? 'Ready (local network)' : 'Ready'),
       style: TextStyle(fontSize: em),
     );
   }
@@ -465,7 +465,9 @@ class _ConnectionPageState extends State<ConnectionPage>
                               counterText: '',
                               hintText: _idInputFocused.value
                                   ? null
-                                  : translate('Enter Remote ID'),
+                                  : translate(kTeamLanOnly
+                                      ? 'IP, hostname or ID'
+                                      : 'Enter Remote ID'),
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 15, vertical: 13)),
                           controller: fieldTextEditingController,
@@ -625,10 +627,14 @@ class _ConnectionPageState extends State<ConnectionPage>
                                                     kDesktopMenuPadding.left),
                                             dismissOnClicked: true,
                                           ))
-                                      .followedBy([
-                                        MenuEntryDivider<String>(),
-                                        _requestApprovalMenu(context),
-                                      ])
+                                      // Team edition: no approval step, allowed
+                                      // IPs connect directly.
+                                      .followedBy(kTeamLanOnly
+                                          ? []
+                                          : [
+                                              MenuEntryDivider<String>(),
+                                              _requestApprovalMenu(context),
+                                            ])
                                       .map((e) => e.build(
                                           context,
                                           const MenuConfig(

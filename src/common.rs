@@ -693,6 +693,9 @@ impl Drop for CheckTestNatType {
 }
 
 pub fn test_nat_type() {
+    if base::team::LAN_ONLY {
+        return;
+    }
     test_ipv6_sync();
     use std::sync::atomic::{AtomicBool, Ordering};
     std::thread::spawn(move || {
@@ -870,6 +873,9 @@ async fn test_rendezvous_server_() {
 }
 
 pub fn test_rendezvous_server() {
+    if base::team::LAN_ONLY {
+        return;
+    }
     std::thread::spawn(test_rendezvous_server_);
 }
 
@@ -1044,6 +1050,10 @@ pub fn is_modifier(evt: &KeyEvent) -> bool {
 }
 
 pub fn check_software_update() {
+    // Team edition: no update server.
+    if base::team::LAN_ONLY {
+        return;
+    }
     if is_custom_client() {
         return;
     }
@@ -1163,6 +1173,9 @@ fn process_software_update_check_response(bytes: Bytes) -> ResultType<()> {
 // Because the url is always `https://api.rustdesk.com/version/latest`.
 #[tokio::main(flavor = "current_thread")]
 pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
+    if base::team::LAN_ONLY {
+        return Ok(());
+    }
     let (request, url) =
         hbb_common::version_check_request(hbb_common::VER_TYPE_RUSTDESK_CLIENT.to_string());
     let proxy_conf = Config::get_socks();
@@ -1254,7 +1267,9 @@ pub fn get_custom_rendezvous_server(custom: String) -> String {
 
 #[inline]
 pub fn get_api_server(api: String, custom: String) -> String {
-    if Config::no_register_device() {
+    // Team edition: there is no API server (accounts, address book, audit, device sync).
+    // An empty URL makes every caller skip its HTTP request.
+    if base::team::LAN_ONLY || Config::no_register_device() {
         return "".to_owned();
     }
     let mut res = get_api_server_(api, custom);
@@ -2683,13 +2698,29 @@ pub fn get_hwid() -> Bytes {
 
 #[inline]
 pub fn get_builtin_option(key: &str) -> String {
-    config::BUILTIN_SETTINGS
+    let value = config::BUILTIN_SETTINGS
         .read()
         .unwrap()
         .get(key)
         .cloned()
-        .unwrap_or_default()
+        .unwrap_or_default();
+    if value.is_empty() && base::team::LAN_ONLY && TEAM_HIDDEN_UI.contains(&key) {
+        return "Y".to_owned();
+    }
+    value
 }
+
+/// Team edition: UI that only makes sense with an ID/relay/API server, or with passwords.
+/// Each is a stock "hide-*"/"remove-*" builtin option, so the Flutter UI already honors it.
+const TEAM_HIDDEN_UI: [&str; 7] = [
+    "hide-network-settings",
+    "hide-server-settings",
+    "hide-proxy-settings",
+    "hide-websocket-settings",
+    "hide-help-cards",
+    "remove-preset-password-warning",
+    "disable-change-permanent-password",
+];
 
 #[inline]
 pub fn is_custom_client() -> bool {

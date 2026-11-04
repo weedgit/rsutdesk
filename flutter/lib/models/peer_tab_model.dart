@@ -26,7 +26,7 @@ class PeerTabModel with ChangeNotifier {
   static const List<String> tabNames = [
     'Recent sessions',
     'Favorites',
-    'Discovered',
+    kTeamLanOnly ? 'Local network' : 'Discovered',
     'Address book',
     'Accessible devices',
   ];
@@ -109,8 +109,10 @@ class PeerTabModel with ChangeNotifier {
       debugPrint("failed to get peer tab order list: $e");
     }
     // init currentTab
+    // Team edition: start on the LAN list, the main place to find desktops.
     _currentTab =
-        int.tryParse(bind.getLocalFlutterOption(k: kOptionPeerTabIndex)) ?? 0;
+        int.tryParse(bind.getLocalFlutterOption(k: kOptionPeerTabIndex)) ??
+            (kTeamLanOnly ? PeerTabIndex.lan.index : 0);
     if (_currentTab < 0 || _currentTab >= maxTabCount) {
       _currentTab = 0;
     }

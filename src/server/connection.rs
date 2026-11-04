@@ -1421,6 +1421,24 @@ impl Connection {
     }
 
     async fn check_whitelist(&mut self, addr: &SocketAddr) -> bool {
+        // Team edition: the allowed-IP list is the only access control, and an empty list
+        // allows nobody.
+        if base::team::LAN_ONLY {
+            let allowed = base::team::parse_allowed_list(&Config::get_option(
+                base::team::OPTION_ALLOWED_IPS,
+            ));
+            if base::team::is_ip_allowed(&allowed, addr.ip()) {
+                return true;
+            }
+            log::warn!("Rejected connection from {}: not in the allowed IP list", addr.ip());
+            self.send_login_error(if allowed.is_empty() {
+                "This desktop has no allowed IPs yet. Add your IP in its Settings > Security."
+            } else {
+                "Your IP is not in this desktop's allowed IP list."
+            })
+            .await;
+            return false;
+        }
         let whitelist: Vec<String> = Config::get_option("whitelist")
             .split(",")
             .filter(|x| !x.is_empty())
@@ -3043,6 +3061,17 @@ impl Connection {
             let allow_logon_screen_password =
                 crate::get_builtin_option(keys::OPTION_ALLOW_LOGON_SCREEN_PASSWORD) == "Y"
                     && is_logon();
+
+            // Team edition: no passwords. The peer already passed the allowed-IP check in
+            // `on_open`, which is the access decision; log it in as if it had clicked through.
+            if base::team::LAN_ONLY {
+                self.set_conn_audit_primary_auth(ConnAuditPrimaryAuth::Click);
+                if !self.send_logon_response_and_keep_alive().await {
+                    return false;
+                }
+                self.try_start_cm(lr.my_id.clone(), lr.my_name.clone(), self.authorized);
+                return true;
+            }
 
             if (password::approve_mode() == ApproveMode::Click && !allow_logon_screen_password)
                 || password::approve_mode() == ApproveMode::Both && !password::has_valid_password()

@@ -2568,16 +2568,42 @@ pub fn is_disable_settings() -> SyncReturn<bool> {
     SyncReturn(config::is_disable_settings())
 }
 
+// Team edition: the address book, accounts and device groups all live on an API server,
+// which this build does not have. Desktops are managed with Recent, Favorites and the LAN list.
 pub fn is_disable_ab() -> SyncReturn<bool> {
-    SyncReturn(config::is_disable_ab())
+    SyncReturn(base::team::LAN_ONLY || config::is_disable_ab())
 }
 
 pub fn is_disable_account() -> SyncReturn<bool> {
-    SyncReturn(config::is_disable_account())
+    SyncReturn(base::team::LAN_ONLY || config::is_disable_account())
 }
 
 pub fn is_disable_group_panel() -> SyncReturn<bool> {
-    SyncReturn(LocalConfig::get_option("disable-group-panel") == "Y")
+    SyncReturn(base::team::LAN_ONLY || LocalConfig::get_option("disable-group-panel") == "Y")
+}
+
+/// Team edition: entries of an allowed-IP list that are not an IP, a CIDR range, `*` or
+/// `0.0.0.0`, joined with ", ". Empty when the list is valid.
+pub fn main_invalid_allowed_ips(list: String) -> SyncReturn<String> {
+    SyncReturn(base::team::invalid_entries(&list).join(", "))
+}
+
+/// Team edition: this machine's IPv4 LAN addresses, so people know what to add to the
+/// allowed-IP lists of the desktops they control.
+pub fn main_get_local_ips() -> SyncReturn<String> {
+    let mut ips: Vec<String> = Vec::new();
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    for interface in default_net::get_interfaces() {
+        for v4 in &interface.ipv4 {
+            if !v4.addr.is_loopback() && !v4.addr.is_link_local() {
+                let ip = v4.addr.to_string();
+                if !ips.contains(&ip) {
+                    ips.push(ip);
+                }
+            }
+        }
+    }
+    SyncReturn(ips.join(", "))
 }
 
 // windows only

@@ -1023,7 +1023,9 @@ def main():
     features = ','.join(get_features(args))
     flutter = args.flutter
     if not flutter:
-        system2('python3 res/inline-sciter.py')
+        # Team edition: only the Flutter desktop UI is supported (see src/lib.rs).
+        print('This team edition supports only the Flutter UI. Run: python3 build.py --flutter')
+        sys.exit(1)
     print(args.skip_cargo)
     if args.skip_cargo:
         skip_cargo = True

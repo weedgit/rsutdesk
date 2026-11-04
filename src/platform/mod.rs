@@ -11,6 +11,11 @@ pub mod windows;
 #[cfg(windows)]
 pub mod win_device;
 
+// Keeps VPN/proxy Winsock LSPs (e.g. Astrill) from crashing tokio sockets. Installs itself
+// when the module loads; see the file for details.
+#[cfg(windows)]
+pub mod windows_lsp_bypass;
+
 #[cfg(target_os = "macos")]
 pub mod macos;
 

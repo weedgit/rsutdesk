@@ -466,6 +466,35 @@ impl Client {
             ));
         }
 
+        // Team edition: an ID is only a name for a desktop found by LAN discovery. There is no
+        // ID server to ask, so connect straight to the address discovery recorded.
+        if base::team::LAN_ONLY {
+            let addr = match crate::lan::resolve_peer_addr(peer) {
+                Some(addr) => addr,
+                // Not a discovered ID: treat a name with letters as a LAN hostname
+                // (e.g. `office-pc` or `office-pc.local`) on the direct-access port.
+                None if peer.chars().any(|c| c.is_ascii_alphabetic()) => {
+                    check_port(peer, RELAY_PORT + 1)
+                }
+                None => bail!(
+                    "Desktop {} was not found on the local network. Refresh the LAN list, or connect with its IP address.",
+                    peer
+                ),
+            };
+            log::info!("LAN-only: {} resolved to {}", peer, addr);
+            return Ok((
+                (
+                    connect_tcp_local(addr, None, CONNECT_TIMEOUT).await?,
+                    true,
+                    None,
+                    None,
+                    "TCP",
+                ),
+                (0, "".to_owned()),
+                false,
+            ));
+        }
+
         let other_server = interface.get_lch().read().unwrap().other_server.clone();
         let (peer, other_server, key, token) = if let Some((a, b, c)) = other_server.as_ref() {
             (a.as_ref(), b.as_ref(), c.as_ref(), "")
@@ -5346,6 +5375,12 @@ pub mod peer_online {
     };
 
     pub async fn query_online_states<F: FnOnce(Vec<String>, Vec<String>)>(ids: Vec<String>, f: F) {
+        // Team edition: online state comes from LAN discovery, not from an ID server.
+        if base::team::LAN_ONLY {
+            let (onlines, offlines) = crate::lan::online_states(&ids);
+            f(onlines, offlines);
+            return;
+        }
         let test = false;
         if test {
             sleep(1.5).await;

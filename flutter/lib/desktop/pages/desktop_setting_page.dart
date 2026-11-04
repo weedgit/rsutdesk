@@ -1037,10 +1037,13 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
             preventMouseKeyBuilder(
               block: locked,
               child: Column(children: [
+                // Team edition: access is decided by the allowed-IP list only, so the
+                // password, 2FA and ID cards are not shown.
+                if (kTeamLanOnly) teamAccess(context),
                 permissions(context),
-                password(context),
-                _Card(title: '2FA', children: [tfa()]),
-                if (!isChangeIdDisabled())
+                if (!kTeamLanOnly) password(context),
+                if (!kTeamLanOnly) _Card(title: '2FA', children: [tfa()]),
+                if (!kTeamLanOnly && !isChangeIdDisabled())
                   _Card(title: 'ID', children: [changeId()]),
                 more(context),
               ]),
@@ -1187,6 +1190,46 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
     }
 
     return tmpWrapper();
+  }
+
+  /// Team edition: who may connect to this desktop.
+  Widget teamAccess(BuildContext context) {
+    final allowed = bind
+        .mainGetOptionSync(key: kOptionWhitelist)
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    final isOptFixed = isOptionFixed(kOptionWhitelist);
+    return _Card(title: 'Allowed IPs', children: [
+      Align(
+        alignment: Alignment.centerLeft,
+        child: Text(translate(kTeamAllowedIpsTip)),
+      ).marginOnly(left: _kContentHMargin, top: 4),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: SelectableText(
+          allowed.isEmpty
+              ? translate("Nobody (add IPs to allow connections)")
+              : allowed.join('\n'),
+          style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: allowed.isEmpty ? Colors.orange : null),
+        ),
+      ).marginOnly(left: _kContentHMargin, top: 8),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          '${translate("This machine's IP")}: ${bind.mainGetLocalIps()}',
+          style: TextStyle(color: disabledTextColor(context, false)),
+        ),
+      ).marginOnly(left: _kContentHMargin, top: 8),
+      _Button('Edit allowed IPs', () {
+        changeWhiteList(callback: () {
+          if (mounted) setState(() {});
+        });
+      }, enabled: !locked && !isOptFixed),
+    ]);
   }
 
   Widget changeId() {
@@ -1457,9 +1500,11 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
       shareRdp(context, enabled),
       _OptionCheckBox(context, 'Deny LAN discovery', 'enable-lan-discovery',
           reverse: true, enabled: enabled),
-      ...directIp(context),
-      whitelist(),
-      idWhitelist(),
+      // Team edition: direct access is always on (port 21118) and the allowed-IP list has
+      // its own card at the top.
+      if (!kTeamLanOnly) ...directIp(context),
+      if (!kTeamLanOnly) whitelist(),
+      if (!kTeamLanOnly) idWhitelist(),
       ...autoDisconnect(context),
       _OptionCheckBox(context, 'keep-awake-during-incoming-sessions-label',
           kOptionKeepAwakeDuringIncomingSessions,
