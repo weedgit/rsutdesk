@@ -250,6 +250,13 @@ void runMultiWindow(
           display: argument['display'] as int?,
         );
       }
+      // Team edition: restore the saved remote window opacity.
+      if (kTeamLanOnly) {
+        final opacity = getTeamRemoteWindowOpacity();
+        if (opacity < kTeamRemoteWindowOpacityMax) {
+          await applyTeamWindowOpacity(opacity);
+        }
+      }
       break;
     case kAppTypeDesktopFileTransfer:
       await restoreWindowPosition(WindowType.FileTransfer,

@@ -153,6 +153,42 @@ bool FlutterWindow::OnCreate() {
         registry->GetRegistrarForPlugin("TextureRgbaRendererPlugin"));
     FlutterGpuTextureRendererPluginCApiRegisterWithRegistrar(
         registry->GetRegistrarForPlugin("FlutterGpuTextureRendererPluginCApi"));
+    // Team edition: let each sub-window (remote session) set its own opacity.
+    auto team_channel = std::make_unique<flutter::MethodChannel<>>(
+        registry->messenger(), "org.rustdesk.rustdesk/team_window",
+        &flutter::StandardMethodCodec::GetInstance());
+    team_channel->SetMethodCallHandler(
+        [flutter_view_controller](
+            const flutter::MethodCall<> &call,
+            std::unique_ptr<flutter::MethodResult<>> result) {
+          if (call.method_name() != "setOpacity") {
+            result->NotImplemented();
+            return;
+          }
+          const auto *value = std::get_if<double>(call.arguments());
+          if (!value) {
+            result->Error("bad_args", "opacity must be a double");
+            return;
+          }
+          double opacity = *value;
+          if (opacity < 0.1) opacity = 0.1;
+          if (opacity > 1.0) opacity = 1.0;
+          HWND hwnd = ::GetAncestor(
+              flutter_view_controller->view()->GetNativeWindow(), GA_ROOT);
+          if (!hwnd) {
+            result->Error("no_window", "window not found");
+            return;
+          }
+          LONG ex_style = ::GetWindowLong(hwnd, GWL_EXSTYLE);
+          if (!(ex_style & WS_EX_LAYERED)) {
+            ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style | WS_EX_LAYERED);
+          }
+          ::SetLayeredWindowAttributes(
+              hwnd, 0, static_cast<BYTE>(opacity * 255.0 + 0.5), LWA_ALPHA);
+          result->Success();
+        });
+    // The channel must outlive this callback; it lives as long as the engine.
+    team_channel.release();
   });
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 

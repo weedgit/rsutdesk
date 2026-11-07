@@ -4037,6 +4037,29 @@ Future<void> forceCloseAllWindows() async {
   await windowManager.hide();
 }
 
+// Team edition: opacity of remote session windows (percent, shared by all).
+const String kOptionTeamRemoteWindowOpacity = 'team-remote-window-opacity';
+const int kTeamRemoteWindowOpacityMin = 20;
+const int kTeamRemoteWindowOpacityMax = 100;
+const _teamWindowChannel = MethodChannel('org.rustdesk.rustdesk/team_window');
+
+int getTeamRemoteWindowOpacity() {
+  final v = int.tryParse(
+      bind.mainGetLocalOption(key: kOptionTeamRemoteWindowOpacity));
+  if (v == null) return kTeamRemoteWindowOpacityMax;
+  return v.clamp(kTeamRemoteWindowOpacityMin, kTeamRemoteWindowOpacityMax);
+}
+
+/// Applies [percent] to the current sub-window. Windows only.
+Future<void> applyTeamWindowOpacity(int percent) async {
+  if (!isWindows || !kTeamLanOnly) return;
+  try {
+    await _teamWindowChannel.invokeMethod('setOpacity', percent / 100.0);
+  } catch (e) {
+    debugPrint('applyTeamWindowOpacity: $e');
+  }
+}
+
 // Team edition sets some defaults to 'Y', so unticking must store an explicit 'N'.
 get defaultOptionNo => (isCustomClient || kTeamLanOnly) ? 'N' : '';
 get defaultOptionWhitelist => isCustomClient ? ',' : '';

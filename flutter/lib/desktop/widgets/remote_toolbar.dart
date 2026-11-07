@@ -1761,6 +1761,10 @@ class _DisplayMenuState extends State<_DisplayMenu> {
     menuChildrenGetter(_IconSubmenuButtonState state) {
       final menuChildren = <Widget>[
         _screenAdjustor.adjustWindow(context),
+        if (kTeamLanOnly && isWindows) ...[
+          const _WindowOpacityControl(),
+          Divider(),
+        ],
         viewStyle(customPercent: _customPercent),
         scrollStyle(state, colorScheme),
         imageQuality(),
@@ -2134,6 +2138,69 @@ class _CustomScaleMenuControlsState
 
 // Lightweight rectangular thumb that paints the current percentage.
 // Stateless and uses only SliderTheme colors; avoids allocations beyond a TextPainter per frame.
+// Team edition: see-through remote window, so the local desktop shows behind.
+class _WindowOpacityControl extends StatefulWidget {
+  const _WindowOpacityControl({Key? key}) : super(key: key);
+
+  @override
+  State<_WindowOpacityControl> createState() => _WindowOpacityControlState();
+}
+
+class _WindowOpacityControlState extends State<_WindowOpacityControl> {
+  late double _value = getTeamRemoteWindowOpacity().toDouble();
+
+  void _set(double v, {bool save = false}) {
+    setState(() => _value = v);
+    applyTeamWindowOpacity(v.round());
+    if (save) {
+      bind.mainSetLocalOption(
+          key: kOptionTeamRemoteWindowOpacity, value: v.round().toString());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    const min = kTeamRemoteWindowOpacityMin * 1.0;
+    const max = kTeamRemoteWindowOpacityMax * 1.0;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 8, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(translate('Window opacity')),
+          SizedBox(
+            width: 220,
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: colorScheme.primary,
+                thumbColor: colorScheme.primary,
+                overlayColor: colorScheme.primary.withOpacity(0.1),
+                showValueIndicator: ShowValueIndicator.never,
+                thumbShape: const _RectValueThumbShape(
+                  min: min,
+                  max: max,
+                  width: 52,
+                  height: 24,
+                  radius: 4,
+                ),
+              ),
+              child: Slider(
+                value: _value,
+                min: min,
+                max: max,
+                divisions: (max - min).round(),
+                onChanged: (v) => _set(v),
+                onChangeEnd: (v) => _set(v, save: true),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RectValueThumbShape extends SliderComponentShape {
   final double min;
   final double max;
