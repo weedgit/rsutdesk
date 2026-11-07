@@ -36,6 +36,14 @@ until someone adds IPs.
 The controlled desktop still shows its running tray icon and a connection-manager window while a
 session is active, so whoever is at that machine can see it is being controlled.
 
+On an installed desktop the service starts with Windows and the tray icon starts at login, so the
+desktop stays reachable after a reboot; closing the main window only hides it. Tray menu:
+
+- **Open** shows the main window.
+- **Pause / Resume**: while paused, the desktop refuses every session and ends the open ones;
+  the service keeps running. The tray tooltip says "Paused". The setting survives a reboot.
+- **Stop and remove service** uninstalls the service (admin prompt); reinstall to bring it back.
+
 ## No internet access
 
 The team edition never talks to the internet, in either direction:

@@ -69,18 +69,47 @@ fn make_tray() -> hbb_common::ResultType<()> {
     ) == "Y";
     // The tray icon is only shown when the service is running, so we don't need to check
     // the `stop-service` option here.
+    // Team edition: "Stop service" uninstalls the service, so say so; pausing is separate.
+    let stop_label = if base::team::LAN_ONLY {
+        "Stop and remove service"
+    } else {
+        "Stop service"
+    };
     let quit_i = if !hide_stop_service {
-        Some(MenuItem::new(translate("Stop service".to_owned()), true, None))
+        Some(MenuItem::new(translate(stop_label.to_owned()), true, None))
     } else {
         None
     };
     let open_i = MenuItem::new(translate("Open".to_owned()), true, None);
-    if let Some(quit_i) = &quit_i {
-        tray_menu.append_items(&[&open_i, quit_i]).ok();
-    } else {
-        tray_menu.append_items(&[&open_i]).ok();
+    // Team edition: Pause refuses sessions (and ends open ones) while the service keeps running.
+    let paused = Arc::new(std::sync::atomic::AtomicBool::new(
+        base::team::LAN_ONLY
+            && base::team::is_paused(
+                crate::ipc::get_options()
+                    .get(base::team::OPTION_PAUSED)
+                    .map(|s| s.as_str())
+                    .unwrap_or_default(),
+            ),
+    ));
+    let pause_label = |p: bool| translate(if p { "Resume" } else { "Pause" }.to_owned());
+    let pause_i = MenuItem::new(
+        pause_label(paused.load(std::sync::atomic::Ordering::SeqCst)),
+        base::team::LAN_ONLY,
+        None,
+    );
+    let mut items: Vec<&dyn tray_icon::menu::IsMenuItem> = vec![&open_i];
+    if base::team::LAN_ONLY {
+        items.push(&pause_i);
     }
-    let tooltip = |count: usize| {
+    if let Some(quit_i) = &quit_i {
+        items.push(quit_i);
+    }
+    tray_menu.append_items(&items).ok();
+    let tooltip_paused = paused.clone();
+    let tooltip = move |count: usize| {
+        if tooltip_paused.load(std::sync::atomic::Ordering::SeqCst) {
+            return format!("{} - {}", crate::get_app_name(), translate("Paused".to_owned()));
+        }
         if count == 0 {
             format!(
                 "{} {}",
@@ -188,6 +217,19 @@ fn make_tray() -> hbb_common::ResultType<()> {
         }
 
         if let Ok(event) = menu_channel.try_recv() {
+            if base::team::LAN_ONLY && event.id == pause_i.id() {
+                let now = !paused.load(std::sync::atomic::Ordering::SeqCst);
+                crate::ipc::set_option(base::team::OPTION_PAUSED, if now { "Y" } else { "" });
+                paused.store(now, std::sync::atomic::Ordering::SeqCst);
+                pause_i.set_text(pause_label(now));
+                log::info!("Tray: {}", if now { "paused" } else { "resumed" });
+                let _ = _tray_icon
+                    .lock()
+                    .unwrap()
+                    .as_mut()
+                    .map(|t| t.set_tooltip(Some(tooltip(0))));
+                return;
+            }
             if let Some(quit_i) = &quit_i {
                 if event.id == quit_i.id() {
                     /* failed in windows, seems no permission to check system process

@@ -1426,6 +1426,14 @@ impl Connection {
         if base::team::LAN_ONLY {
             // LAN only: an address from outside the local network is refused even when the
             // allowed list would match it (e.g. `*` and a forwarded port).
+            if base::team::is_paused(&Config::get_option(base::team::OPTION_PAUSED)) {
+                log::info!("Rejected connection from {}: paused", addr.ip());
+                self.send_login_error(
+                    "This desktop is paused. Ask the person at it to resume RustDesk from its tray icon.",
+                )
+                .await;
+                return false;
+            }
             if !base::team::is_lan_ip(addr.ip()) {
                 log::warn!("Rejected connection from {}: not a LAN address", addr.ip());
                 self.send_login_error(base::team::NOT_LAN_ERROR).await;

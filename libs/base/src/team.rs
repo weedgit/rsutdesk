@@ -13,6 +13,14 @@ pub const LAN_ONLY: bool = true;
 /// setting writes, so the existing settings dialog keeps working.
 pub const OPTION_ALLOWED_IPS: &str = "whitelist";
 
+/// Option key for "paused": the service keeps running but refuses every session and ends the
+/// open ones. Set from the tray; unlike "stop-service" it never uninstalls anything.
+pub const OPTION_PAUSED: &str = "team-paused";
+
+pub fn is_paused(value: &str) -> bool {
+    value == "Y"
+}
+
 /// Entries that allow every address. Only meant for testing.
 const ALLOW_ALL: [&str; 2] = ["*", "0.0.0.0"];
 

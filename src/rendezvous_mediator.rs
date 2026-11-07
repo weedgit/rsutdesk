@@ -391,7 +391,10 @@ impl RendezvousMediator {
         });
         scrap::codec::test_av1();
         loop {
-            if option2bool("stop-service", &Config::get_option("stop-service")) {
+            // Paused from the tray: end open sessions too, not only new ones.
+            if option2bool("stop-service", &Config::get_option("stop-service"))
+                || base::team::is_paused(&Config::get_option(base::team::OPTION_PAUSED))
+            {
                 server.write().unwrap().close_connections();
             }
             sleep(1.).await;
