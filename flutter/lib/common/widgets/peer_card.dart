@@ -190,7 +190,9 @@ class _PeerCardState extends State<_PeerCard>
                         getOnline(isPortrait ? 4 : 8, peer.online),
                         Expanded(
                             child: Text(
-                          peer.alias.isEmpty ? formatID(peer.id) : peer.alias,
+                          peer.alias.isEmpty
+                              ? (kTeamLanOnly ? name : formatID(peer.id))
+                              : peer.alias,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.titleSmall,
                         )),
@@ -204,7 +206,7 @@ class _PeerCardState extends State<_PeerCard>
                               child: Align(
                                 alignment: Alignment.centerLeft,
                                 child: Text(
-                                  name,
+                                  kTeamLanOnly && peer.alias.isEmpty ? '' : name,
                                   style: isPortrait ? null : greyStyle,
                                   textAlign: TextAlign.start,
                                   overflow: TextOverflow.ellipsis,
@@ -326,7 +328,9 @@ class _PeerCardState extends State<_PeerCard>
                                       message: name,
                                       waitDuration: const Duration(seconds: 1),
                                       child: Text(
-                                        name,
+                                        kTeamLanOnly && peer.alias.isEmpty
+                                            ? ''
+                                            : name,
                                         style: const TextStyle(
                                             color: Colors.white70,
                                             fontSize: 12),
@@ -372,7 +376,9 @@ class _PeerCardState extends State<_PeerCard>
                         getOnline(8, peer.online),
                         Expanded(
                             child: Text(
-                          peer.alias.isEmpty ? formatID(peer.id) : peer.alias,
+                          peer.alias.isEmpty
+                              ? (kTeamLanOnly ? name : formatID(peer.id))
+                              : peer.alias,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.titleSmall,
                         )),

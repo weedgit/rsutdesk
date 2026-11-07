@@ -2712,7 +2712,7 @@ pub fn get_builtin_option(key: &str) -> String {
 
 /// Team edition: UI that only makes sense with an ID/relay/API server, or with passwords.
 /// Each is a stock "hide-*"/"remove-*" builtin option, so the Flutter UI already honors it.
-const TEAM_HIDDEN_UI: [&str; 7] = [
+const TEAM_HIDDEN_UI: [&str; 9] = [
     "hide-network-settings",
     "hide-server-settings",
     "hide-proxy-settings",
@@ -2720,6 +2720,9 @@ const TEAM_HIDDEN_UI: [&str; 7] = [
     "hide-help-cards",
     "remove-preset-password-warning",
     "disable-change-permanent-password",
+    // No remote printing and no session recording in the team edition.
+    "hide-remote-printer-settings",
+    "hide-recording-button",
 ];
 
 #[inline]

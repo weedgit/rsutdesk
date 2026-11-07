@@ -37,9 +37,11 @@ class PeerTabModel with ChangeNotifier {
     IconFont.addressBook,
     IconFont.deviceGroupFill,
   ];
+  // Team edition: Local network is the only tab. Recent and Favorites are off;
+  // Address book and Groups are already off (no account server).
   List<bool> isEnabled = List.from([
-    true,
-    true,
+    !kTeamLanOnly,
+    !kTeamLanOnly,
     !isWeb && bind.mainGetLocalOption(key: "disable-discovery-panel") != "Y",
     !(bind.isDisableAb() || bind.isDisableAccount()),
     !(bind.isDisableGroupPanel() || bind.isDisableAccount()),

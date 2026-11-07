@@ -310,13 +310,17 @@ class _ConnectionPageState extends State<ConnectionPage>
         Expanded(
             child: Column(
           children: [
-            Row(
-              children: [
-                Flexible(child: _buildRemoteIDTextField(context)),
-              ],
-            ).marginOnly(top: 22),
-            SizedBox(height: 12),
-            Divider().paddingOnly(right: 12),
+            // Team edition: no manual ID entry. Allowed desktops appear in the
+            // Local network list on their own; use its refresh button if needed.
+            if (!kTeamLanOnly) ...[
+              Row(
+                children: [
+                  Flexible(child: _buildRemoteIDTextField(context)),
+                ],
+              ).marginOnly(top: 22),
+              SizedBox(height: 12),
+              Divider().paddingOnly(right: 12),
+            ],
             Expanded(child: PeerTabPage()),
           ],
         ).paddingOnly(left: 12.0)),

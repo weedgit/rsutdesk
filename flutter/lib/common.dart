@@ -624,8 +624,11 @@ class MyTheme {
         return ThemeMode.light;
       case "dark":
         return ThemeMode.dark;
-      default:
+      case "system":
         return ThemeMode.system;
+      default:
+        // Team edition: no saved preference means Dark.
+        return kTeamLanOnly ? ThemeMode.dark : ThemeMode.system;
     }
   }
 }

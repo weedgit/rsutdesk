@@ -91,8 +91,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         child: loadLogo(),
       ),
       buildTip(context),
-      if (!isOutgoingOnly) buildIDBoard(context),
+      // Team edition: the ID is not shown; access is by IP, name or alias.
+      if (!isOutgoingOnly && !kTeamLanOnly) buildIDBoard(context),
       if (!isOutgoingOnly && !kTeamLanOnly) buildPasswordBoard(context),
+      if (!isOutgoingOnly && kTeamLanOnly) buildTeamServiceControl(context),
       if (!isOutgoingOnly && kTeamLanOnly) buildTeamAccessBoard(context),
       FutureBuilder<Widget>(
         future: Future.value(
@@ -282,6 +284,46 @@ class _DesktopHomePageState extends State<DesktopHomePage>
 
   /// Team edition: instead of a password, show this machine's LAN IP (what others add to their
   /// allowed lists) and this desktop's own allowed-IP list, with a button to edit it.
+  /// Team edition: start/stop the service from the main window (moved out of
+  /// Settings). While stopped, this desktop accepts no connections.
+  Widget buildTeamServiceControl(BuildContext context) {
+    final RxBool serviceStop = Get.find<RxBool>(tag: 'stop-service');
+    final RxBool btnEnabled = true.obs;
+    return Container(
+      margin: const EdgeInsets.only(left: 20.0, right: 16, top: 8, bottom: 8),
+      child: Obx(() {
+        final stopped = serviceStop.value;
+        return Row(
+          children: [
+            Icon(stopped ? Icons.pause_circle_filled : Icons.play_circle_fill,
+                    color: stopped ? Colors.orange : const Color(0xFF32BEA6),
+                    size: 18)
+                .marginOnly(right: 8),
+            Expanded(
+              child: Text(
+                stopped
+                    ? translate('Service is not running')
+                    : translate('Ready (local network)'),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+            ElevatedButton(
+              onPressed: btnEnabled.value
+                  ? () async {
+                      btnEnabled.value = false;
+                      await start_service(stopped);
+                      Future.delayed(const Duration(seconds: 1),
+                          () => btnEnabled.value = true);
+                    }
+                  : null,
+              child: Text(translate(stopped ? 'Start' : 'Stop')),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+
   Widget buildTeamAccessBoard(BuildContext context) {
     final labelStyle = TextStyle(
         fontSize: 14,

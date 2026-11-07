@@ -415,12 +415,14 @@ class _GeneralState extends State<_General> {
     return ListView(
       controller: scrollController,
       children: [
-        if (!isWeb) service(),
+        // Team edition: Service control lives on the main window; no Language
+        // (English only) and no Recording.
+        if (!isWeb && !kTeamLanOnly) service(),
         theme(),
-        _Card(title: 'Language', children: [language()]),
+        if (!kTeamLanOnly) _Card(title: 'Language', children: [language()]),
         if (!isWeb) hwcodec(),
         if (!isWeb) audio(context),
-        if (!isWeb) record(context),
+        if (!isWeb && !kTeamLanOnly) record(context),
         if (!isWeb) WaylandCard(),
         other(),
         if (!bind.isIncomingOnly()) keyboardShortcuts(),
@@ -474,6 +476,30 @@ class _GeneralState extends State<_General> {
     }
 
     final isOptFixed = isOptionFixed(kCommConfKeyTheme);
+    // Team edition: the three choices on one row, "Follow System" shortened to "System".
+    if (kTeamLanOnly) {
+      return _Card(title: 'Theme', children: [
+        Row(
+          children: [
+            _Radio<String>(context,
+                value: 'light',
+                groupValue: current,
+                label: 'Light',
+                onChanged: isOptFixed ? null : onChanged),
+            _Radio<String>(context,
+                value: 'dark',
+                groupValue: current,
+                label: 'Dark',
+                onChanged: isOptFixed ? null : onChanged),
+            _Radio<String>(context,
+                value: 'system',
+                groupValue: current,
+                label: 'System',
+                onChanged: isOptFixed ? null : onChanged),
+          ],
+        ),
+      ]);
+    }
     return _Card(title: 'Theme', children: [
       _Radio<String>(context,
           value: 'light',
