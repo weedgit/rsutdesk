@@ -2528,6 +2528,11 @@ fn apply_team_display_defaults() {
         (keys::OPTION_I444, "Y"),
         (keys::OPTION_ENABLE_FILE_COPY_PASTE, "Y"),
         ("lock_after_session_end", "Y"),
+        // Multi-monitor PCs: monitor buttons right on the toolbar, each remote monitor in its
+        // own window, spread over all local monitors.
+        ("show_monitors_toolbar", "Y"),
+        ("show_displays_as_individual_windows", "Y"),
+        ("use_all_my_displays_for_the_remote_session", "Y"),
     ] {
         defaults.entry(k.to_owned()).or_insert_with(|| v.to_owned());
     }
