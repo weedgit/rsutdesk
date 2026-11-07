@@ -734,6 +734,13 @@ def retarget_control_to_drm_variant():
         f.write(body)
 
 
+def build_deb_package():
+    # Root-owned and not group/world-writable whoever runs the build: the root service runs these
+    # files, so the building user's uid (often 1000, the first user on a desktop) must not own them.
+    system2('chmod -R go-w tmpdeb')
+    system2('dpkg-deb --root-owner-group -b tmpdeb rustdesk.deb')
+
+
 def build_flutter_deb(version, features):
     if not skip_cargo:
         system2(f'cargo build --locked --features {features} --lib --release')
@@ -780,7 +787,7 @@ def build_flutter_deb(version, features):
         retarget_control_to_drm_variant()
     system2('cp -a ../res/DEBIAN/* tmpdeb/DEBIAN/')
     md5_file_folder("tmpdeb/")
-    system2('dpkg-deb -b tmpdeb rustdesk.deb;')
+    build_deb_package()
 
     system2('/bin/rm -rf tmpdeb/')
     system2('/bin/rm -rf ../res/DEBIAN/control')
@@ -921,7 +928,7 @@ def build_deb_from_folder(version, binary_folder, want_drm=False):
         retarget_control_to_drm_variant()
     system2('cp -a ../res/DEBIAN/* tmpdeb/DEBIAN/')
     md5_file_folder("tmpdeb/")
-    system2('dpkg-deb -b tmpdeb rustdesk.deb;')
+    build_deb_package()
 
     system2('/bin/rm -rf tmpdeb/')
     system2('/bin/rm -rf ../res/DEBIAN/control')
