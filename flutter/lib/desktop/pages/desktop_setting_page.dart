@@ -619,14 +619,15 @@ class _GeneralState extends State<_General> {
             ),
           ),
       ],
-      if (!isWeb && !bind.isCustomClient())
+      // Team edition: no update server, so hide the update options.
+      if (!isWeb && !bind.isCustomClient() && !kTeamLanOnly)
         _OptionCheckBox(
           context,
           'Check for software update on startup',
           kOptionEnableCheckUpdate,
           isServer: false,
         ),
-      if (showAutoUpdate)
+      if (showAutoUpdate && !kTeamLanOnly)
         _OptionCheckBox(
           context,
           'Auto update',
@@ -639,7 +640,9 @@ class _GeneralState extends State<_General> {
           'Capture screen using DirectX',
           kOptionDirectxCapture,
         ),
-      if (!isWeb && !incomingOnly) ...[
+      // Team edition: a LAN uses a direct TCP connection to IP:21118; there is
+      // no ID server, so NAT hole punching and WebRTC do not apply.
+      if (!isWeb && !incomingOnly && !kTeamLanOnly) ...[
         _OptionCheckBox(
           context,
           'Enable TCP hole punching',
@@ -659,7 +662,7 @@ class _GeneralState extends State<_General> {
           isServer: false,
         ),
       ],
-      if (!incomingOnly) ...webrtcOptions(context),
+      if (!incomingOnly && !kTeamLanOnly) ...webrtcOptions(context),
       if (!isWeb && !incomingOnly)
         Tooltip(
           message: translate('sync-clipboard-between-sessions-tip'),
@@ -2683,25 +2686,31 @@ class _AboutState extends State<_About> {
                 SelectionArea(
                     child: Text('${translate('Fingerprint')}: $fingerprint')
                         .marginSymmetric(vertical: 4.0)),
-              SelectionArea(
-                  child: Text('${translate('ID')}: $myId')
-                      .marginSymmetric(vertical: 4.0)),
-              InkWell(
-                  onTap: () {
-                    launchUrlString('https://rustdesk.com/privacy.html');
-                  },
-                  child: Text(
-                    translate('Privacy Statement'),
-                    style: linkStyle,
-                  ).marginSymmetric(vertical: 4.0)),
-              InkWell(
-                  onTap: () {
-                    launchUrlString('https://rustdesk.com');
-                  },
-                  child: Text(
-                    translate('Website'),
-                    style: linkStyle,
-                  ).marginSymmetric(vertical: 4.0)),
+              // Team edition: the ID is hidden everywhere; the Privacy Statement
+              // and Website links point to rustdesk.com, which a private LAN-only
+              // build does not use.
+              if (!kTeamLanOnly)
+                SelectionArea(
+                    child: Text('${translate('ID')}: $myId')
+                        .marginSymmetric(vertical: 4.0)),
+              if (!kTeamLanOnly)
+                InkWell(
+                    onTap: () {
+                      launchUrlString('https://rustdesk.com/privacy.html');
+                    },
+                    child: Text(
+                      translate('Privacy Statement'),
+                      style: linkStyle,
+                    ).marginSymmetric(vertical: 4.0)),
+              if (!kTeamLanOnly)
+                InkWell(
+                    onTap: () {
+                      launchUrlString('https://rustdesk.com');
+                    },
+                    child: Text(
+                      translate('Website'),
+                      style: linkStyle,
+                    ).marginSymmetric(vertical: 4.0)),
               Container(
                 decoration: const BoxDecoration(color: Color(0xFF2c8cff)),
                 padding:
@@ -2718,7 +2727,9 @@ class _AboutState extends State<_About> {
                             style: const TextStyle(color: Colors.white),
                           ),
                           Text(
-                            translate('Slogan_tip'),
+                            kTeamLanOnly
+                                ? 'Internal LAN-only edition for team use. Not for sale.\nBased on RustDesk (AGPL-3.0).'
+                                : translate('Slogan_tip'),
                             style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 color: Colors.white),

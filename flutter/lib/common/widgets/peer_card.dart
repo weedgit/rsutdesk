@@ -605,11 +605,16 @@ abstract class BasePeerCard extends StatelessWidget {
     if (isWindows && peer.platform == kPeerPlatformWindows) {
       menuItems.add(_rdpAction(context, peer.id));
     }
-    menuItems.add(MenuEntryDivider<String>());
-    menuItems.add(_requestApprovalAction(context));
-    // menuItems.add(await _openNewConnInOptAction(peer.id));
-    if (!isWeb) {
-      menuItems.add(await _forceAlwaysRelayAction(peer.id));
+    // Team edition: allowed IP = full permission with no prompts, so "Request
+    // approval" has no meaning; and there is no relay server on a LAN, so
+    // "Always connect via relay" would only break a connection.
+    if (!kTeamLanOnly) {
+      menuItems.add(MenuEntryDivider<String>());
+      menuItems.add(_requestApprovalAction(context));
+      // menuItems.add(await _openNewConnInOptAction(peer.id));
+      if (!isWeb) {
+        menuItems.add(await _forceAlwaysRelayAction(peer.id));
+      }
     }
     return menuItems;
   }
@@ -1179,10 +1184,14 @@ class DiscoveredPeerCard extends BasePeerCard {
       menuItems.add(_createShortCutAction(peer.id));
     }
 
-    if (!favs.contains(peer.id)) {
-      menuItems.add(_addFavAction(peer.id));
-    } else {
-      menuItems.add(_rmFavAction(peer.id, () async {}));
+    // Team edition: the Favorites tab is removed, so "Add to favorites" does
+    // nothing visible.
+    if (!kTeamLanOnly) {
+      if (!favs.contains(peer.id)) {
+        menuItems.add(_addFavAction(peer.id));
+      } else {
+        menuItems.add(_rmFavAction(peer.id, () async {}));
+      }
     }
 
     if (gFFI.userModel.userName.isNotEmpty) {
