@@ -127,12 +127,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           ),
           const Spacer(),
           IconButton(
-            tooltip: translate('Refresh'),
-            splashRadius: 18,
-            icon: const Icon(Icons.refresh, size: 18),
-            onPressed: () => bind.mainDiscover(),
-          ),
-          IconButton(
             tooltip: translate('Settings'),
             splashRadius: 18,
             icon: const Icon(Icons.settings, size: 18),
@@ -169,6 +163,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               ],
             );
           }),
+          IconButton(
+            tooltip: translate('Refresh'),
+            splashRadius: 18,
+            icon: const Icon(Icons.refresh, size: 18),
+            onPressed: () => bind.mainDiscover(),
+          ),
         ],
       ),
     );

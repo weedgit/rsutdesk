@@ -324,8 +324,10 @@ class _ConnectionPageState extends State<ConnectionPage>
             Expanded(child: PeerTabPage()),
           ],
         ).paddingOnly(left: 12.0)),
-        if (!isOutgoingOnly) const Divider(height: 1),
-        if (!isOutgoingOnly) OnlineStatusWidget()
+        // Team edition: the main window's bottom bar already shows the service
+        // status and Start/Stop, so this status bar is redundant.
+        if (!isOutgoingOnly && !kTeamLanOnly) const Divider(height: 1),
+        if (!isOutgoingOnly && !kTeamLanOnly) OnlineStatusWidget()
       ],
     );
   }
