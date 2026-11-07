@@ -106,6 +106,18 @@ class _PeerTabPageState extends State<PeerTabPage>
       return model.multiSelectionMode ? createMultiSelectionBar(model) : widget;
     }
 
+    // Team edition: there is only the Local network list, so the top toolbar
+    // (tab switcher, search, view toggles, multi-select) is removed. Refresh is
+    // provided on the bottom bar in the main window instead.
+    if (kTeamLanOnly) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _createPeersView(),
+        ],
+      );
+    }
+
     return Column(
       textBaseline: TextBaseline.ideographic,
       crossAxisAlignment: CrossAxisAlignment.start,

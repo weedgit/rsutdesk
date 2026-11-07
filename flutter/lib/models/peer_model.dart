@@ -13,6 +13,7 @@ class Peer {
   String hostname;
   String platform;
   String alias;
+  String ip; // LAN discovery address (team edition shows this on the card)
   List<dynamic> tags;
   bool forceAlwaysRelay = false;
   String rdpPort;
@@ -38,6 +39,7 @@ class Peer {
         hostname = json['hostname'] ?? '',
         platform = json['platform'] ?? '',
         alias = json['alias'] ?? '',
+        ip = json['ip'] ?? '',
         tags = json['tags'] ?? [],
         forceAlwaysRelay = json['forceAlwaysRelay'] == 'true',
         rdpPort = json['rdpPort'] ?? '',
@@ -56,6 +58,7 @@ class Peer {
       "hostname": hostname,
       "platform": platform,
       "alias": alias,
+      "ip": ip,
       "tags": tags,
       "forceAlwaysRelay": forceAlwaysRelay.toString(),
       "rdpPort": rdpPort,
@@ -109,6 +112,7 @@ class Peer {
     required this.device_group_name,
     required this.note,
     this.sameServer,
+    this.ip = '',
   });
 
   Peer.loading()
@@ -161,7 +165,8 @@ class Peer {
         loginName: other.loginName,
         device_group_name: other.device_group_name,
         note: other.note,
-        sameServer: other.sameServer);
+        sameServer: other.sameServer,
+        ip: other.ip);
     peer.online = other.online;
     return peer;
   }

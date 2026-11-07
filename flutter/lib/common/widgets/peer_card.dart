@@ -139,6 +139,11 @@ class _PeerCardState extends State<_PeerCard>
     final name = hideUsernameOnCard == true
         ? peer.hostname
         : '${peer.username}${peer.username.isNotEmpty && peer.hostname.isNotEmpty ? '@' : ''}${peer.hostname}';
+    // Team edition: show the IP under the card. With an alias set, show name + IP
+    // (so the alias stays the headline but you still see who/where it is).
+    final teamSubtitle = peer.alias.isEmpty
+        ? peer.ip
+        : (peer.ip.isEmpty ? name : '$name  ·  ${peer.ip}');
     final greyStyle = TextStyle(
         fontSize: 11,
         color: Theme.of(context).textTheme.titleLarge?.color?.withOpacity(0.6));
@@ -206,7 +211,7 @@ class _PeerCardState extends State<_PeerCard>
                               child: Align(
                                 alignment: Alignment.centerLeft,
                                 child: Text(
-                                  kTeamLanOnly && peer.alias.isEmpty ? '' : name,
+                                  kTeamLanOnly ? teamSubtitle : name,
                                   style: isPortrait ? null : greyStyle,
                                   textAlign: TextAlign.start,
                                   overflow: TextOverflow.ellipsis,
@@ -291,6 +296,9 @@ class _PeerCardState extends State<_PeerCard>
     final name = hideUsernameOnCard == true
         ? peer.hostname
         : '${peer.username}${peer.username.isNotEmpty && peer.hostname.isNotEmpty ? '@' : ''}${peer.hostname}';
+    final teamSubtitle = peer.alias.isEmpty
+        ? peer.ip
+        : (peer.ip.isEmpty ? name : '$name  ·  ${peer.ip}');
     final child = Card(
       color: Colors.transparent,
       elevation: 0,
@@ -328,9 +336,7 @@ class _PeerCardState extends State<_PeerCard>
                                       message: name,
                                       waitDuration: const Duration(seconds: 1),
                                       child: Text(
-                                        kTeamLanOnly && peer.alias.isEmpty
-                                            ? ''
-                                            : name,
+                                        kTeamLanOnly ? teamSubtitle : name,
                                         style: const TextStyle(
                                             color: Colors.white70,
                                             fontSize: 12),

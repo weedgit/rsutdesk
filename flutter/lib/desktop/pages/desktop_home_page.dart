@@ -59,6 +59,19 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    // Team edition: no left side pane and no top toolbar. The window is just the
+    // Local network list, with a bottom bar carrying this machine's IP, allowed-IP
+    // editing, refresh, settings and the server Start/Stop control.
+    if (kTeamLanOnly) {
+      return _buildBlock(
+          child: Column(
+        children: [
+          Expanded(child: buildRightPane(context)),
+          const Divider(height: 1, thickness: 1),
+          buildTeamBottomBar(context),
+        ],
+      ));
+    }
     final isIncomingOnly = bind.isIncomingOnly();
     return _buildBlock(
         child: Row(
@@ -69,6 +82,96 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         if (!isIncomingOnly) Expanded(child: buildRightPane(context)),
       ],
     ));
+  }
+
+  /// Team edition bottom bar: this machine's IP, allowed-IP editing, refresh,
+  /// settings, and the server Start/Stop control (moved here from the left pane
+  /// and from Settings). The running status reads "Server".
+  Widget buildTeamBottomBar(BuildContext context) {
+    final RxBool serviceStop = Get.find<RxBool>(tag: 'stop-service');
+    final RxBool btnEnabled = true.obs;
+    final textColor = Theme.of(context).textTheme.titleLarge?.color;
+    return Container(
+      height: 46,
+      color: Theme.of(context).colorScheme.background,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          Icon(Icons.computer, size: 16, color: textColor?.withOpacity(0.6)),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Tooltip(
+              message: translate('IP address'),
+              child: GestureDetector(
+                onDoubleTap: () {
+                  final ips = bind.mainGetLocalIps();
+                  Clipboard.setData(ClipboardData(text: ips));
+                  showToast(translate("Copied"));
+                },
+                child: Builder(builder: (context) {
+                  final ips = bind.mainGetLocalIps();
+                  return Text(
+                    ips.isEmpty ? '-' : ips,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, color: textColor),
+                  );
+                }),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: translate('Allowed IPs'),
+            splashRadius: 18,
+            icon: const Icon(Icons.shield_outlined, size: 18),
+            onPressed: () => changeWhiteList(),
+          ),
+          const Spacer(),
+          IconButton(
+            tooltip: translate('Refresh'),
+            splashRadius: 18,
+            icon: const Icon(Icons.refresh, size: 18),
+            onPressed: () => bind.mainDiscover(),
+          ),
+          IconButton(
+            tooltip: translate('Settings'),
+            splashRadius: 18,
+            icon: const Icon(Icons.settings, size: 18),
+            onPressed: DesktopTabPage.onAddSetting,
+          ),
+          const SizedBox(width: 8),
+          Obx(() {
+            final stopped = serviceStop.value;
+            return Row(
+              children: [
+                Icon(
+                    stopped
+                        ? Icons.pause_circle_filled
+                        : Icons.play_circle_fill,
+                    color: stopped ? Colors.orange : const Color(0xFF32BEA6),
+                    size: 18),
+                const SizedBox(width: 6),
+                Text(
+                  stopped ? translate('Service is not running') : 'Server',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: btnEnabled.value
+                      ? () async {
+                          btnEnabled.value = false;
+                          await start_service(stopped);
+                          Future.delayed(const Duration(seconds: 1),
+                              () => btnEnabled.value = true);
+                        }
+                      : null,
+                  child: Text(translate(stopped ? 'Start' : 'Stop')),
+                ),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
   }
 
   Widget _buildBlock({required Widget child}) {

@@ -282,6 +282,10 @@ fn wait_response(
     };
     let mut mac: Option<String> = None;
     let own_ips = own_ip_addrs();
+    // This machine's own id. A pong carrying it is this machine answering itself,
+    // which happens when the source address is not one of our adapters (e.g. a VPN
+    // like Astrill rewrites it, or default_net doesn't enumerate the VPN adapter).
+    let my_id = Config::get_id();
 
     socket.set_read_timeout(timeout)?;
     loop {
@@ -294,7 +298,7 @@ fn wait_response(
                         // An answer from one of this machine's own addresses is this machine.
                         // The MAC check below misses that when the answer arrives on another
                         // adapter (VPN, Hyper-V, Wi-Fi + Ethernet) or one without a MAC.
-                        if p.cmd == "pong" && own_ips.contains(&addr.ip()) {
+                        if p.cmd == "pong" && (own_ips.contains(&addr.ip()) || p.id == my_id) {
                             continue;
                         }
                         if p.cmd == "pong" {
@@ -396,7 +400,8 @@ async fn handle_received_peers(mut rx: UnboundedReceiver<config::DiscoveryPeer>)
     let mut peers = config::LanPeers::load().peers;
     // Drop this machine if an older build saved it into the list.
     let own_ips = own_ip_addrs();
-    peers.retain(|peer| !is_own_machine(peer, &own_ips));
+    let my_id = Config::get_id();
+    peers.retain(|peer| peer.id != my_id && !is_own_machine(peer, &own_ips));
     peers.iter_mut().for_each(|peer| {
         peer.online = false;
     });
