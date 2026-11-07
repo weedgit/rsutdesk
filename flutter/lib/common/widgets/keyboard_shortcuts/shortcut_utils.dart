@@ -174,7 +174,9 @@ List<Map<String, dynamic>> filterDefaultBindingsForPlatform(
         action == kShortcutActionToggleToolbar) {
       continue;
     }
-    if (!cap.includeCloseTabShortcut && action == kShortcutActionCloseTab) {
+    if (!cap.includeCloseTabShortcut &&
+        (action == kShortcutActionCloseTab ||
+            action == kShortcutActionCloseAllSessions)) {
       continue;
     }
     if (!cap.includeSwitchSidesShortcut &&

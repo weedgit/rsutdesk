@@ -799,6 +799,13 @@ abstract class BasePeerCard extends StatelessWidget {
       ),
       proc: () {
         bind.mainWol(id: id);
+        // Team edition: WOL is fire-and-forget, so confirm the packet went out.
+        if (kTeamLanOnly) {
+          final target = peer.alias.isNotEmpty
+              ? peer.alias
+              : (peer.hostname.isNotEmpty ? peer.hostname : peer.ip);
+          showToast('Wake signal sent to $target');
+        }
       },
       padding: menuPadding,
       dismissOnClicked: true,

@@ -15,6 +15,8 @@ mod server;
 pub use self::server::*;
 mod client;
 mod lan;
+#[cfg(all(windows, feature = "flutter"))]
+mod team_hotkey;
 #[cfg(not(any(target_os = "ios")))]
 mod rendezvous_mediator;
 #[cfg(not(any(target_os = "ios")))]

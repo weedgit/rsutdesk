@@ -4030,6 +4030,13 @@ bool get isCustomClient {
 get defaultOptionLang => isCustomClient ? 'default' : '';
 get defaultOptionTheme => isCustomClient ? 'system' : '';
 get defaultOptionYes => isCustomClient ? 'Y' : '';
+/// Team edition "Force close all": close every session window and hide the
+/// main window to the tray, with no confirmation. Main window only.
+Future<void> forceCloseAllWindows() async {
+  await rustDeskWinManager.closeAllSubWindows();
+  await windowManager.hide();
+}
+
 // Team edition sets some defaults to 'Y', so unticking must store an explicit 'N'.
 get defaultOptionNo => (isCustomClient || kTeamLanOnly) ? 'N' : '';
 get defaultOptionWhitelist => isCustomClient ? ',' : '';

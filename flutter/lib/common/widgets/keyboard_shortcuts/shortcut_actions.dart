@@ -176,6 +176,8 @@ final List<KeyboardShortcutActionGroup> kKeyboardShortcutActionGroups = [
     KeyboardShortcutActionEntry(kShortcutActionToggleToolbar, 'Toggle toolbar'),
     KeyboardShortcutActionEntry(kShortcutActionCloseTab, 'Close tab'),
     KeyboardShortcutActionEntry(
+        kShortcutActionCloseAllSessions, 'Force close all'),
+    KeyboardShortcutActionEntry(
         kShortcutActionSwitchTabNext, 'Switch to next tab'),
     KeyboardShortcutActionEntry(
         kShortcutActionSwitchTabPrev, 'Switch to previous tab'),
@@ -236,7 +238,9 @@ List<KeyboardShortcutActionGroup> filterKeyboardShortcutActionGroupsForPlatform(
     if (!cap.includeToolbarShortcut && id == kShortcutActionToggleToolbar) {
       return false;
     }
-    if (!cap.includeCloseTabShortcut && id == kShortcutActionCloseTab) {
+    if (!cap.includeCloseTabShortcut &&
+        (id == kShortcutActionCloseTab ||
+            id == kShortcutActionCloseAllSessions)) {
       return false;
     }
     if (!cap.includeSwitchSidesShortcut && id == kShortcutActionSwitchSides) {

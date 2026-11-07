@@ -29,6 +29,7 @@ pub mod action_id {
     pub const TOGGLE_RECORDING: &str     = "toggle_recording";
     pub const SWITCH_SIDES: &str         = "switch_sides";
     pub const CLOSE_TAB: &str            = "close_tab";
+    pub const CLOSE_ALL_SESSIONS: &str   = "close_all_sessions";
     pub const TOGGLE_TOOLBAR: &str       = "toggle_toolbar";
     pub const RESTART_REMOTE: &str       = "restart_remote";
     pub const RESET_CANVAS: &str         = "reset_canvas";
@@ -286,7 +287,8 @@ fn action_available_on_platform(action: &str, platform: &str, is_wayland: bool) 
     match action {
         action_id::TOGGLE_RELATIVE_MOUSE_MODE => !mobile && !is_wayland,
         action_id::TOGGLE_FULLSCREEN | action_id::SCREENSHOT | action_id::SWITCH_TAB_NEXT
-        | action_id::SWITCH_TAB_PREV | action_id::CLOSE_TAB | action_id::SWITCH_SIDES
+        | action_id::SWITCH_TAB_PREV | action_id::CLOSE_TAB | action_id::CLOSE_ALL_SESSIONS
+        | action_id::SWITCH_SIDES
         | action_id::TOGGLE_TOOLBAR | action_id::PIN_TOOLBAR | action_id::SWITCH_DISPLAY_ALL
         | action_id::TOGGLE_ENABLE_FILE_COPY_PASTE | action_id::KEYBOARD_MODE_MAP
         | action_id::KEYBOARD_MODE_TRANSLATE | action_id::KEYBOARD_MODE_LEGACY
@@ -387,6 +389,7 @@ lazy_static::lazy_static! {
 /// checked against `flutter/test/fixtures/key_up_shortcut_actions.json`.
 const RELEASE_ACTION_IDS: &[&str] = &[
     action_id::CLOSE_TAB,
+    action_id::CLOSE_ALL_SESSIONS,
     action_id::SWITCH_TAB_NEXT,
     action_id::SWITCH_TAB_PREV,
     action_id::RESTART_REMOTE,

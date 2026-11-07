@@ -691,8 +691,9 @@ List<TTextMenu> toolbarControls(BuildContext context, String id, FFI ffi) {
         },
         actionId: kShortcutActionToggleBlockInput));
   }
-  // switchSides
-  if (isDefaultConn &&
+  // switchSides (not in the team edition)
+  if (!kTeamLanOnly &&
+      isDefaultConn &&
       isDesktop &&
       ffiModel.keyboard &&
       pi.platform != kPeerPlatformAndroid &&

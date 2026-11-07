@@ -681,6 +681,17 @@ fn start_grab_loop() {
                 return None;
             }
 
+            // Team edition: Pause is Force close all. A focused session window
+            // swallows keys before Windows sees the hotkey, so trigger it here
+            // and keep Pause from reaching the remote.
+            #[cfg(all(target_os = "windows", feature = "flutter"))]
+            if base::team::LAN_ONLY && key == Key::Pause && KEYBOARD_HOOKED.load(Ordering::SeqCst) {
+                if is_press {
+                    crate::team_hotkey::trigger();
+                }
+                return None;
+            }
+
             let res = if KEYBOARD_HOOKED.load(Ordering::SeqCst) {
                 client::process_event(&get_keyboard_mode(), &event, None);
                 if is_press {

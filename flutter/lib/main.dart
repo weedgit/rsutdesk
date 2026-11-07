@@ -565,6 +565,12 @@ _registerEventHandler() {
       reloadAllWindows();
     });
   }
+  // Team edition: system-wide Force close all hotkey (Pause/Break),
+  // registered in Rust so it works while another app is active.
+  if (isWindows && desktopType == DesktopType.main && kTeamLanOnly) {
+    platformFFI.registerEventHandler('force_close_all', 'force_close_all',
+        (_) async => await forceCloseAllWindows());
+  }
   if (isAndroid) {
     platformFFI.registerEventHandler(
         'android_needs_deploy', 'android_needs_deploy', (_) async {

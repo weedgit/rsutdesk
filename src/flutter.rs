@@ -1879,6 +1879,12 @@ pub fn start_global_event_stream(s: StreamSink<String>, app_type: String) -> Res
             );
         }
     }
+    drop(lock);
+    // Team edition: the main window owns the system-wide Force close all hotkey.
+    #[cfg(windows)]
+    if base::team::LAN_ONLY && app_type_values[0] == APP_TYPE_MAIN {
+        crate::team_hotkey::start();
+    }
     Ok(())
 }
 

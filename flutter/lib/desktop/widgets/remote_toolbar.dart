@@ -850,7 +850,8 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
     if (!isWeb) {
       toolbarItems.add(_VoiceCallMenu(id: widget.id, ffi: widget.ffi));
     }
-    if (!isWeb) toolbarItems.add(_RecordMenu());
+    // Team edition: no session recording.
+    if (!isWeb && !kTeamLanOnly) toolbarItems.add(_RecordMenu());
     toolbarItems.add(_CloseMenu(id: widget.id, ffi: widget.ffi));
     final toolbarBorderRadius = BorderRadius.all(Radius.circular(4.0));
     // innerAxis: how the toolbar icons themselves flow.

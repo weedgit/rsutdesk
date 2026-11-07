@@ -12,6 +12,7 @@ const kShortcutActionToggleBlockInput = 'toggle_block_input';
 const kShortcutActionToggleRecording = 'toggle_recording';
 const kShortcutActionSwitchSides = 'switch_sides';
 const kShortcutActionCloseTab = 'close_tab';
+const kShortcutActionCloseAllSessions = 'close_all_sessions';
 const kShortcutActionToggleToolbar = 'toggle_toolbar';
 const kShortcutActionRestartRemote = 'restart_remote';
 const kShortcutActionResetCanvas = 'reset_canvas';
@@ -27,6 +28,7 @@ const kShortcutActionSwitchTabPrev = 'switch_tab_prev';
 /// `flutter/test/fixtures/key_up_shortcut_actions.json`.
 const kShortcutActionsRunOnKeyUp = {
   kShortcutActionCloseTab,
+  kShortcutActionCloseAllSessions,
   kShortcutActionSwitchTabNext,
   kShortcutActionSwitchTabPrev,
   kShortcutActionRestartRemote,

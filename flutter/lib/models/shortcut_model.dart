@@ -18,6 +18,7 @@ import '../desktop/widgets/tabbar_widget.dart' show DesktopTabController;
 import '../models/model.dart';
 import '../models/platform_model.dart';
 import '../models/state_model.dart';
+import '../utils/multi_window_manager.dart';
 
 typedef ShortcutCallback = FutureOr<void> Function();
 
@@ -213,8 +214,9 @@ class ShortcutModel {
       includeTabShortcuts: isDesktop,
       includeToolbarShortcut: desktopLayout,
       includeCloseTabShortcut: isDesktop,
-      includeSwitchSidesShortcut: isDesktop,
-      includeRecordingShortcut: !isWeb && !isIOS,
+      // Team edition hides Switch Sides and recording, so no shortcuts either.
+      includeSwitchSidesShortcut: isDesktop && !kTeamLanOnly,
+      includeRecordingShortcut: !isWeb && !isIOS && !kTeamLanOnly,
       includeResetCanvasShortcut: isMobile,
       includePinToolbarShortcut: desktopLayout,
       includeViewModeShortcut: true,
@@ -434,6 +436,18 @@ void registerSessionShortcutActions(
         return;
       }
       tabController.closeBy(ffi.id);
+    });
+
+    // Force close all — desktop only. The main window owns every session
+    // window, so ask it to close them all (remote, file transfer, terminal,
+    // camera, port forward) at once, skipping every close confirmation.
+    ffi.shortcutModel.register(kShortcutActionCloseAllSessions, () async {
+      try {
+        await rustDeskWinManager.call(
+            WindowType.Main, kWindowCloseAllSessions, null);
+      } catch (_) {
+        // This window is closed mid-call; nothing to report.
+      }
     });
   }
 
