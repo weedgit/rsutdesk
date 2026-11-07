@@ -286,20 +286,20 @@ async fn identity_handshake(stream: &mut Stream, secure: bool) -> ResultType<()>
         } else {
             tcp::KX_VERSION_LATEST
         };
+        let mut id_pk = IdPk {
+            id: Config::get_id(),
+            pk: Bytes::from(our_pk_b.0.to_vec()),
+            dtls_fingerprint,
+            kx_version: advertised,
+            ..Default::default()
+        };
+        // Team edition: no ID server vouches for our key, so hand it over for the controller
+        // to remember on first use (see team_keys.rs).
+        if base::team::LAN_ONLY {
+            crate::team_keys::attach_sign_pk(&mut id_pk, &pk);
+        }
         msg_out.set_signed_id(SignedId {
-            id: sign::sign(
-                &IdPk {
-                    id: Config::get_id(),
-                    pk: Bytes::from(our_pk_b.0.to_vec()),
-                    dtls_fingerprint,
-                    kx_version: advertised,
-                    ..Default::default()
-                }
-                .write_to_bytes()
-                .unwrap_or_default(),
-                &sk,
-            )
-            .into(),
+            id: sign::sign(&id_pk.write_to_bytes().unwrap_or_default(), &sk).into(),
             ..Default::default()
         });
         timeout(CONNECT_TIMEOUT, stream.send(&msg_out)).await??;

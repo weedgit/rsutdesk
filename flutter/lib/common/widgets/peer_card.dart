@@ -919,14 +919,14 @@ abstract class BasePeerCard extends StatelessWidget {
         children: [
           Text(
             translate('Delete'),
-            style: style?.copyWith(color: Colors.red),
+            style: style?.copyWith(color: Color(0xFF767676)),
           ),
           Expanded(
               child: Align(
             alignment: Alignment.centerRight,
             child: Transform.scale(
               scale: 0.8,
-              child: Icon(Icons.delete_forever, color: Colors.red),
+              child: Icon(Icons.delete_forever, color: Color(0xFF767676)),
             ),
           ).marginOnly(right: 4)),
         ],
@@ -983,7 +983,7 @@ abstract class BasePeerCard extends StatelessWidget {
         } else {
           if (tab.index == PeerTabIndex.ab.index) {
             BotToast.showText(
-                contentColor: Colors.red, text: translate("Failed"));
+                contentColor: Color(0xFF767676), text: translate("Failed"));
           }
         }
       },
@@ -1510,7 +1510,7 @@ Widget getOnline(double rightPadding, bool online) {
       child: Padding(
           padding: EdgeInsets.fromLTRB(0, 4, rightPadding, 4),
           child: CircleAvatar(
-              radius: 3, backgroundColor: online ? Colors.green : kColorWarn)));
+              radius: 3, backgroundColor: online ? teamActiveColor() : kColorWarn)));
 }
 
 Widget build_more(BuildContext context,

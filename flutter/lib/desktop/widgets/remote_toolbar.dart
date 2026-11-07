@@ -330,8 +330,8 @@ class _ToolbarTheme {
   static Color inactiveColor = Colors.grey[800]!;
   static Color hoverInactiveColor = Colors.grey[850]!;
 
-  static const Color redColor = Colors.redAccent;
-  static const Color hoverRedColor = Colors.red;
+  static const Color redColor = Color(0xFF868686);
+  static const Color hoverRedColor = Color(0xFF767676);
   // kMinInteractiveDimension
   static const double height = 20.0;
   static const double dividerHeight = 12.0;
@@ -2251,7 +2251,7 @@ class _RectValueThumbShape extends SliderComponentShape {
     );
     final Color? evaluatedColor = colorTween.evaluate(enableAnimation);
     final Color? thumbColor = sliderTheme.thumbColor;
-    final Color fillColor = evaluatedColor ?? thumbColor ?? Colors.blueAccent;
+    final Color fillColor = evaluatedColor ?? thumbColor ?? Color(0xFF828282);
 
     final RRect rrect = RRect.fromRectAndRadius(
       Rect.fromCenter(center: center, width: width, height: height),

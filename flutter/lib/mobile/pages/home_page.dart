@@ -141,7 +141,7 @@ class HomePageState extends State<HomePage> {
                       height: 10,
                       decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Color.fromARGB(255, 133, 246, 199)),
+                          color: Color.fromARGB(255, 207, 207, 207)),
                     ).marginSymmetric(horizontal: 2),
                 ],
               ),

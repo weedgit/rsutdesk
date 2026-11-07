@@ -438,29 +438,19 @@ impl Client {
         }
         // to-do: remember the port for each peer, so that we can retry easier
         if hbb_common::is_ip_str(peer) {
+            let (stream, pk) =
+                Self::connect_direct(peer, check_port(peer, RELAY_PORT + 1)).await?;
             return Ok((
-                (
-                    connect_tcp_local(check_port(peer, RELAY_PORT + 1), None, CONNECT_TIMEOUT)
-                        .await?,
-                    true,
-                    None,
-                    None,
-                    "TCP",
-                ),
+                (stream, true, pk, None, "TCP"),
                 (0, "".to_owned()),
                 false,
             ));
         }
         // Allow connect to {domain}:{port}
         if hbb_common::is_domain_port_str(peer) {
+            let (stream, pk) = Self::connect_direct(peer, peer.to_owned()).await?;
             return Ok((
-                (
-                    connect_tcp_local(peer, None, CONNECT_TIMEOUT).await?,
-                    true,
-                    None,
-                    None,
-                    "TCP",
-                ),
+                (stream, true, pk, None, "TCP"),
                 (0, "".to_owned()),
                 false,
             ));
@@ -482,14 +472,9 @@ impl Client {
                 ),
             };
             log::info!("LAN-only: {} resolved to {}", peer, addr);
+            let (stream, pk) = Self::connect_direct(peer, addr).await?;
             return Ok((
-                (
-                    connect_tcp_local(addr, None, CONNECT_TIMEOUT).await?,
-                    true,
-                    None,
-                    None,
-                    "TCP",
-                ),
+                (stream, true, pk, None, "TCP"),
                 (0, "".to_owned()),
                 false,
             ));
@@ -1681,6 +1666,102 @@ impl Client {
     }
 
     /// Establish secure connection with the server.
+    /// Direct TCP to `addr`. Team edition then runs the LAN key exchange, so the session is
+    /// encrypted; elsewhere a direct connection stays as it always was.
+    async fn connect_direct(peer: &str, addr: String) -> ResultType<(Stream, Option<Vec<u8>>)> {
+        if !base::team::LAN_ONLY {
+            return Ok((connect_tcp_local(addr, None, CONNECT_TIMEOUT).await?, None));
+        }
+        // Team edition: only LAN addresses, and straight there, never through a proxy.
+        let resolved: Vec<SocketAddr> = hbb_common::tokio::net::lookup_host(addr.as_str())
+            .await
+            .map_err(|e| anyhow!("Cannot find {}: {}", addr, e))?
+            .collect();
+        let lan: Vec<SocketAddr> = resolved
+            .iter()
+            .copied()
+            .filter(|a| base::team::is_lan_ip(a.ip()))
+            .collect();
+        if lan.is_empty() {
+            log::warn!("Refused {} -> {:?}: not a LAN address", addr, resolved);
+            bail!("{} ({})", base::team::NOT_LAN_ERROR, addr);
+        }
+        let mut last_err = None;
+        let mut stream = None;
+        for a in lan {
+            match hbb_common::tcp::FramedStream::new(a, None, CONNECT_TIMEOUT).await {
+                Ok(s) => {
+                    stream = Some(Stream::Tcp(s));
+                    break;
+                }
+                Err(e) => last_err = Some(e),
+            }
+        }
+        let mut stream = match stream {
+            Some(s) => s,
+            None => return Err(last_err.unwrap_or_else(|| anyhow!("Failed to connect to {}", addr))),
+        };
+        let pk = Self::team_secure_connection(peer, &mut stream).await?;
+        Ok((stream, pk))
+    }
+
+    /// Team edition key exchange. The desktop signs its session key with its long-term key and
+    /// includes that key; we check the signature, compare the key with the one remembered for
+    /// `peer` (team_keys.rs) and answer with a symmetric key, as `secure_connection` does with a
+    /// key vouched for by an ID server. A desktop on an older build sends no key: the session
+    /// then stays unencrypted and the caller warns about it.
+    async fn team_secure_connection(peer: &str, conn: &mut Stream) -> ResultType<Option<Vec<u8>>> {
+        let bytes = match timeout(READ_TIMEOUT, conn.next()).await? {
+            Some(res) => res?,
+            None => bail!("Reset by the peer"),
+        };
+        let signed = match Message::parse_from_bytes(&bytes).map(|m| m.union) {
+            Ok(Some(message::Union::SignedId(si))) => si.id,
+            _ => {
+                log::error!("LAN handshake with {}: no signed id", peer);
+                conn.send(&Message::new()).await?;
+                return Ok(None);
+            }
+        };
+        let Some(sign_pk) = crate::team_keys::signed_sign_pk(&signed) else {
+            log::warn!("LAN handshake with {}: no key (older build), not encrypted", peer);
+            conn.send(&Message::new()).await?;
+            return Ok(None);
+        };
+        let (their_pk_b, kx_version) =
+            match decode_id_pk_dtls(&signed, &sign::PublicKey(sign_pk)) {
+                Ok((_, pk, _, kx_version)) => (pk, kx_version),
+                Err(err) => {
+                    log::error!("LAN handshake with {}: {}, not encrypted", peer, err);
+                    conn.send(&Message::new()).await?;
+                    return Ok(None);
+                }
+            };
+        let check = crate::team_keys::check(peer, &sign_pk);
+        log::info!("LAN handshake with {}: key {:?}", peer, check);
+        let (asymmetric_value, symmetric_value, key) = create_symmetric_key_msg(their_pk_b);
+        let picked = hbb_common::tcp::kx_version_for(kx_version);
+        let mut msg_out = Message::new();
+        msg_out.set_public_key(PublicKey {
+            asymmetric_value: asymmetric_value.clone(),
+            symmetric_value,
+            kx_version: picked,
+            ..Default::default()
+        });
+        timeout(CONNECT_TIMEOUT, conn.send(&msg_out)).await??;
+        conn.set_negotiated_key(
+            key,
+            true,
+            &hbb_common::tcp::KxTranscript {
+                initiator_pk: &asymmetric_value,
+                responder_pk: &their_pk_b,
+                advertised: kx_version,
+                picked,
+            },
+        )?;
+        Ok(Some(sign_pk.to_vec()))
+    }
+
     async fn secure_connection(
         peer_id: &str,
         signed_id_pk: Vec<u8>,
@@ -5099,12 +5180,30 @@ pub async fn confirm_insecure_connection(
     interface: &impl Interface,
     receiver: &mut UnboundedReceiver<Data>,
 ) -> bool {
-    interface.msgbox(
-        "insecure-connection-nocancel-hasclose",
-        "Insecure Connection",
-        "conn-e2ee-unavailable-tip",
-        "",
-    );
+    // Team edition: an unencrypted session means the desktop runs an older build.
+    let text = if base::team::LAN_ONLY {
+        "team-conn-unencrypted-tip"
+    } else {
+        "conn-e2ee-unavailable-tip"
+    };
+    confirm_connection(interface, receiver, "Insecure Connection", text).await
+}
+
+/// Team edition: the desktop shows a different key than the one remembered for it.
+pub async fn confirm_changed_key(
+    interface: &impl Interface,
+    receiver: &mut UnboundedReceiver<Data>,
+) -> bool {
+    confirm_connection(interface, receiver, "team-key-changed-title", "team-key-changed-tip").await
+}
+
+async fn confirm_connection(
+    interface: &impl Interface,
+    receiver: &mut UnboundedReceiver<Data>,
+    title: &str,
+    text: &str,
+) -> bool {
+    interface.msgbox("insecure-connection-nocancel-hasclose", title, text, "");
     while let Some(data) = receiver.recv().await {
         match data {
             Data::ContinueInsecureConnection => return true,

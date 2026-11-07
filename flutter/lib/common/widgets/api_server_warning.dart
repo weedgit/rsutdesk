@@ -63,7 +63,7 @@ class ApiServerWarning extends StatelessWidget {
           alignment: AlignmentDirectional.centerStart,
           child: Text(
             controller.text.trim().isEmpty ? emptyMessage : message,
-            style: TextStyle(color: Colors.orange.shade700),
+            style: TextStyle(color: Color(0xFF929292)),
           ),
         );
       },

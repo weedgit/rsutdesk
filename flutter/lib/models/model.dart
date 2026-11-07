@@ -1044,7 +1044,7 @@ class FfiModel with ChangeNotifier {
     } else {
       if (type.contains('error')) {
         BotToast.showText(
-          contentColor: Colors.red,
+          contentColor: Color(0xFF767676),
           text: translate(text),
           duration: duration,
           clickClose: true,
@@ -1157,7 +1157,7 @@ class FfiModel with ChangeNotifier {
       }
 
       final style =
-          ElevatedButton.styleFrom(backgroundColor: Colors.green[700]);
+          ElevatedButton.styleFrom(backgroundColor: Color(0xFF6B6B6B));
 
       return CustomAlertDialog(
         title: null,

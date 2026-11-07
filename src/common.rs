@@ -1556,6 +1556,7 @@ fn parse_simple_header(header: &str) -> Vec<HeaderEntry> {
 
 /// POST request via TCP proxy.
 async fn post_request_via_tcp_proxy(url: &str, body: &str, header: &str) -> ResultType<String> {
+    crate::team_offline_guard()?;
     let headers = parse_simple_header(header);
     let resp = tcp_proxy_request("POST", url, body.as_bytes(), headers).await?;
     if !resp.error.is_empty() {
@@ -1603,6 +1604,7 @@ fn parse_json_header_entries(header: &str) -> ResultType<Vec<HeaderEntry>> {
 
 /// Returns (status_code, body_text). Separating status so the wrapper can decide on fallback.
 async fn post_request_http(url: &str, body: &str, header: &str) -> ResultType<(u16, String)> {
+    crate::team_offline_guard()?;
     let proxy_conf = Config::get_socks();
     let tls_url = get_url_for_tls(url, &proxy_conf);
     let tls_type = get_cached_tls_type(tls_url);
@@ -1681,6 +1683,7 @@ where
 /// - 4xx responses are returned as-is (server is reachable, business logic error).
 /// - If fallback also fails, returns the original HTTP result (text or error).
 pub async fn post_request(url: String, body: String, header: &str) -> ResultType<String> {
+    crate::team_offline_guard()?;
     with_tcp_proxy_fallback(
         &url,
         "POST",
@@ -1696,6 +1699,7 @@ async fn post_request_via_tcp_proxy_status(
     body: &str,
     header: &str,
 ) -> ResultType<(u16, String)> {
+    crate::team_offline_guard()?;
     let headers = parse_simple_header(header);
     let resp = tcp_proxy_request("POST", url, body.as_bytes(), headers).await?;
     if !resp.error.is_empty() {
@@ -1715,6 +1719,7 @@ pub async fn post_request_with_status(
     body: String,
     header: &str,
 ) -> ResultType<(u16, String)> {
+    crate::team_offline_guard()?;
     if should_use_raw_tcp_for_api(&url) {
         return post_request_via_tcp_proxy_status(&url, &body, header).await;
     }
@@ -1761,6 +1766,7 @@ async fn post_request_(
     danger_accept_invalid_cert: Option<bool>,
     original_danger_accept_invalid_cert: Option<bool>,
 ) -> ResultType<reqwest::Response> {
+    crate::team_offline_guard()?;
     let mut req = create_http_client_async(
         tls_type.unwrap_or(TlsType::Rustls),
         danger_accept_invalid_cert.unwrap_or(false),
@@ -1847,6 +1853,7 @@ async fn post_request_(
 
 #[tokio::main(flavor = "current_thread")]
 pub async fn post_request_sync(url: String, body: String, header: &str) -> ResultType<String> {
+    crate::team_offline_guard()?;
     post_request(url, body, header).await
 }
 
@@ -2006,6 +2013,7 @@ pub async fn http_request_sync(
     body: Option<String>,
     header: String,
 ) -> ResultType<String> {
+    crate::team_offline_guard()?;
     with_tcp_proxy_fallback(
         &url,
         &method,
@@ -2839,6 +2847,10 @@ async fn test_bind_ipv6() -> ResultType<SocketAddr> {
 }
 
 pub async fn test_ipv6() -> Option<tokio::task::JoinHandle<()>> {
+    // Team edition: no STUN probes to public servers.
+    if base::team::LAN_ONLY {
+        return None;
+    }
     {
         // One look and one claim of the minute, under one lock: two connections arriving
         // together would otherwise both find it over and both probe.
@@ -3113,6 +3125,15 @@ pub fn get_control_permission(
     } else {
         None
     }
+}
+
+/// Team edition: nothing may reach the internet. Every HTTP entry point calls this first.
+#[inline]
+pub fn team_offline_guard() -> ResultType<()> {
+    if base::team::LAN_ONLY {
+        hbb_common::bail!("Team edition works on the local network only (no internet access)");
+    }
+    Ok(())
 }
 
 pub fn is_direct_ip_access(peer: &str) -> bool {

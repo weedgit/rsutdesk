@@ -908,10 +908,10 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
               SvgPicture.asset(
                 'assets/call_wait.svg',
                 colorFilter:
-                    ColorFilter.mode(Colors.redAccent, BlendMode.srcIn),
+                    ColorFilter.mode(Color(0xFF868686), BlendMode.srcIn),
               ),
               onPressEndVoiceCall,
-              labelStyle: TextStyle(color: Colors.redAccent))
+              labelStyle: TextStyle(color: Color(0xFF868686)))
           : makeTextMenu(
               'Voice call',
               SvgPicture.asset(
@@ -1297,7 +1297,7 @@ void showOptions(
     final numColorSelected = Colors.white;
     final numColorUnselected = isDarkTheme ? Colors.grey : Colors.black87;
     // We can't use `Theme.of(context).primaryColor` here, the color is:
-    // - light theme: 0xff2196f3 (Colors.blue)
+    // - light theme: 0xff2196f3 (Color(0xFF7E7E7E))
     // - dark theme: 0xff212121 (the canvas color?)
     final numBgSelected =
         Theme.of(context).colorScheme.primary.withOpacity(0.6);

@@ -881,7 +881,7 @@ Future<bool?> _openLoginDialog() async {
                 if (!inProgress)
                   SelectableText(
                     error.toString(),
-                    style: const TextStyle(fontSize: 11, color: Colors.red),
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF767676)),
                     textAlign: TextAlign.center,
                   ),
               ],
@@ -957,7 +957,7 @@ Future<bool?> _openLoginDialog() async {
                       ?.withOpacity(0.55),
             ),
             onTap: onDialogCancel,
-            hoverColor: Colors.red,
+            hoverColor: Color(0xFF767676),
             borderRadius: BorderRadius.circular(5),
           ),
         ).marginOnly(top: 10, right: 15),

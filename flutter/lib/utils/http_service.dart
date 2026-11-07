@@ -15,6 +15,10 @@ class HttpService {
     Map<String, String>? headers,
     dynamic body,
   }) async {
+    // Team edition: LAN only, no internet access at all.
+    if (kTeamLanOnly) {
+      throw Exception('Team edition works on the local network only');
+    }
     headers ??= {'Content-Type': 'application/json'};
 
     // Use Rust HTTP implementation for non-web platforms for consistency.

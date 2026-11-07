@@ -237,9 +237,26 @@ impl<T: InvokeUiSession> Remote<T> {
                 };
                 self.handler
                     .set_connection_type(is_secured, direct, stream_type); // flutter -> connection_ready
-                if !is_secured
-                    && !crate::common::is_direct_ip_access(&self.handler.get_id())
-                    && !client::confirm_insecure_connection(&self.handler, &mut self.receiver).await
+                // Team edition: a desktop whose key differs from the remembered one is only
+                // trusted again once the user says so.
+                let mut rejected = false;
+                if base::team::LAN_ONLY {
+                    if let Some(new_pk) = crate::team_keys::take_changed(&self.handler.get_id()) {
+                        if client::confirm_changed_key(&self.handler, &mut self.receiver).await {
+                            crate::team_keys::trust(&self.handler.get_id(), &new_pk);
+                        } else {
+                            rejected = true;
+                        }
+                    }
+                }
+                // Team edition encrypts direct connections too, so an unencrypted one is always
+                // worth a warning (it means the desktop runs an older build).
+                if rejected
+                    || (!is_secured
+                        && (base::team::LAN_ONLY
+                            || !crate::common::is_direct_ip_access(&self.handler.get_id()))
+                        && !client::confirm_insecure_connection(&self.handler, &mut self.receiver)
+                            .await)
                 {
                     self.send_close_reason(&mut peer, "").await;
                     if kcp.is_some() {

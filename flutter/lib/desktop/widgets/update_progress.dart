@@ -298,7 +298,7 @@ class UpdateProgressState extends State<UpdateProgress> {
       minHeight: 20,
       borderRadius: BorderRadius.circular(5),
       backgroundColor: Colors.grey[300],
-      valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7E7E7E)),
     );
   }
 }

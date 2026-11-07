@@ -25,6 +25,10 @@ pub fn is_enable() -> bool {
 }
 
 pub fn run(rx: Receiver<RecordState>) {
+    // Team edition: no server to upload recordings to.
+    if base::team::LAN_ONLY {
+        return;
+    }
     std::thread::spawn(move || {
         let api_server = crate::get_api_server(
             Config::get_option("api-server"),

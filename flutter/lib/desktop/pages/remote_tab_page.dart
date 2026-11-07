@@ -599,9 +599,9 @@ class _RelativeMouseModeHint extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         margin: const EdgeInsets.only(right: 8),
         decoration: BoxDecoration(
-          color: Colors.orange.withOpacity(0.2),
+          color: Color(0xFFA5A5A5).withOpacity(0.2),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.orange.withOpacity(0.5)),
+          border: Border.all(color: Color(0xFFA5A5A5).withOpacity(0.5)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -609,7 +609,7 @@ class _RelativeMouseModeHint extends StatelessWidget {
             Icon(
               Icons.mouse,
               size: 14,
-              color: Colors.orange[700],
+              color: Color(0xFF929292),
             ),
             const SizedBox(width: 4),
             Text(
@@ -617,7 +617,7 @@ class _RelativeMouseModeHint extends StatelessWidget {
                   'rel-mouse-exit-{${isMacOS ? "Cmd+G" : "Ctrl+Alt"}}-tip'),
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.orange[700],
+                color: Color(0xFF929292),
               ),
             ),
           ],

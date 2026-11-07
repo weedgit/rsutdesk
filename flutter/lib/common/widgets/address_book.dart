@@ -544,7 +544,7 @@ class _AddressBookState extends State<AddressBook> {
                       children: [
                         Text(
                           '*',
-                          style: TextStyle(color: Colors.red, fontSize: 14),
+                          style: TextStyle(color: Color(0xFF767676), fontSize: 14),
                         ),
                         Text(
                           'ID',
@@ -657,7 +657,7 @@ class _AddressBookState extends State<AddressBook> {
             ),
             if (!gFFI.abModel.current.isPersonal())
               Row(children: [
-                Icon(Icons.info, color: Colors.amber).marginOnly(right: 4),
+                Icon(Icons.info, color: Color(0xFFBEBEBE)).marginOnly(right: 4),
                 Text(
                   translate('share_warning_tip'),
                   style: TextStyle(fontSize: 12),
@@ -697,7 +697,7 @@ class _AddressBookState extends State<AddressBook> {
           for (var t in [kUntagged, translate(kUntagged)]) {
             if (tags.contains(t)) {
               BotToast.showText(
-                  contentColor: Colors.red, text: 'Tag name cannot be "$t"');
+                  contentColor: Color(0xFF767676), text: 'Tag name cannot be "$t"');
               isInProgress = false;
               return;
             }

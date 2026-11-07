@@ -308,13 +308,13 @@ class _RecordingDialogState extends State<_RecordingDialog> {
       // is still captured.
       statusLine = Row(
         children: [
-          const Icon(Icons.close, size: 16, color: Colors.red),
+          const Icon(Icons.close, size: 16, color: Color(0xFF767676)),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               translate('shortcut-key-not-supported')
                   .replaceAll('{}', _unsupportedKey!),
-              style: const TextStyle(color: Colors.red),
+              style: const TextStyle(color: Color(0xFF767676)),
             ),
           ),
         ],
@@ -327,13 +327,13 @@ class _RecordingDialogState extends State<_RecordingDialog> {
     } else if (!_hasRequiredPrefix) {
       statusLine = Row(
         children: [
-          Icon(Icons.close, size: 16, color: Colors.red),
+          Icon(Icons.close, size: 16, color: Color(0xFF767676)),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               translate('shortcut-must-include-modifiers')
                   .replaceAll('{}', _formatPrefix()),
-              style: const TextStyle(color: Colors.red),
+              style: const TextStyle(color: Color(0xFF767676)),
             ),
           ),
         ],
@@ -343,12 +343,12 @@ class _RecordingDialogState extends State<_RecordingDialog> {
       statusLine = Row(
         children: [
           Icon(Icons.warning_amber_outlined,
-              size: 16, color: Colors.orange.shade700),
+              size: 16, color: Color(0xFF929292)),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               '${translate('shortcut-already-bound-to')} "$otherLabel"',
-              style: TextStyle(color: Colors.orange.shade700),
+              style: TextStyle(color: Color(0xFF929292)),
             ),
           ),
         ],
@@ -356,9 +356,9 @@ class _RecordingDialogState extends State<_RecordingDialog> {
     } else {
       statusLine = Row(
         children: [
-          const Icon(Icons.check, size: 16, color: Colors.green),
+          const Icon(Icons.check, size: 16, color: Color(0xFF878787)),
           const SizedBox(width: 6),
-          Text(translate('Valid'), style: const TextStyle(color: Colors.green)),
+          Text(translate('Valid'), style: const TextStyle(color: Color(0xFF878787))),
         ],
       );
     }

@@ -55,7 +55,7 @@ class _ScanPageState extends State<ScanPage> {
       key: qrKey,
       onQRViewCreated: _onQRViewCreated,
       overlay: QrScannerOverlayShape(
-        borderColor: Colors.red,
+        borderColor: Color(0xFF767676),
         borderRadius: 10,
         borderLength: 30,
         borderWidth: 10,
@@ -119,7 +119,7 @@ class _ScanPageState extends State<ScanPage> {
 
   Widget _buildFlashToggleButton() {
     return IconButton(
-      color: Colors.yellow,
+      color: Color(0xFFDDDDDD),
       icon: Icon(Icons.flash_on),
       iconSize: 32.0,
       onPressed: () async {

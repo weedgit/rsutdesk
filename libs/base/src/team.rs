@@ -115,6 +115,28 @@ fn contains(net: IpAddr, prefix: u8, ip: IpAddr) -> bool {
     }
 }
 
+/// Whether `ip` is on the local network: a private (RFC 1918) or link-local IPv4 address, a
+/// unique-local or link-local IPv6 address, or loopback. The team edition talks to nothing else,
+/// in either direction.
+pub fn is_lan_ip(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(v4) => v4.is_private() || v4.is_link_local() || v4.is_loopback(),
+        IpAddr::V6(v6) => {
+            if let Some(v4) = v6.to_ipv4_mapped() {
+                return is_lan_ip(IpAddr::V4(v4));
+            }
+            let first = v6.segments()[0];
+            v6.is_loopback()
+                || (first & 0xfe00) == 0xfc00 // fc00::/7 unique local
+                || (first & 0xffc0) == 0xfe80 // fe80::/10 link local
+        }
+    }
+}
+
+/// The error shown when something tries to reach an address outside the local network.
+pub const NOT_LAN_ERROR: &str =
+    "Team edition works on the local network only; this address is not a LAN address.";
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -183,5 +205,35 @@ mod tests {
         let l = list("0.0.0.0/0");
         assert!(is_ip_allowed(&l, ip("203.0.113.5")));
         assert!(!is_ip_allowed(&l, ip("2001:db8::1")));
+    }
+
+    #[test]
+    fn lan_ips() {
+        for s in [
+            "10.0.0.1",
+            "172.16.5.4",
+            "172.31.255.255",
+            "192.168.1.20",
+            "169.254.3.3",
+            "127.0.0.1",
+            "::1",
+            "fd12:3456::1",
+            "fe80::1",
+            "::ffff:192.168.1.5",
+        ] {
+            assert!(is_lan_ip(ip(s)), "{} should be LAN", s);
+        }
+        for s in [
+            "8.8.8.8",
+            "172.32.0.1",
+            "100.64.0.1",
+            "203.0.113.5",
+            "0.0.0.0",
+            "2001:db8::1",
+            "2606:4700::1111",
+            "::ffff:8.8.8.8",
+        ] {
+            assert!(!is_lan_ip(ip(s)), "{} should not be LAN", s);
+        }
     }
 }

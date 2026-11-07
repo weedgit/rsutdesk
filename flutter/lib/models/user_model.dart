@@ -202,7 +202,7 @@ class UserModel {
       debugPrint("login: jsonDecode resp body failed: ${e.toString()}");
       if (resp.statusCode != 200) {
         BotToast.showText(
-            contentColor: Colors.red, text: 'HTTP ${resp.statusCode}');
+            contentColor: Color(0xFF767676), text: 'HTTP ${resp.statusCode}');
       }
       rethrow;
     }

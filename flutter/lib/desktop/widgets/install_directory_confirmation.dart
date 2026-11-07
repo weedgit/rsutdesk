@@ -88,7 +88,7 @@ class _InstallDirectoryWarningState extends State<InstallDirectoryWarning> {
               style: TextStyle(
                   color: snapshot.hasError
                       ? Theme.of(context).colorScheme.error
-                      : Colors.orange.shade700)),
+                      : Color(0xFF929292))),
         );
       },
     );

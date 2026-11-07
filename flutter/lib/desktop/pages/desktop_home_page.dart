@@ -33,7 +33,7 @@ class DesktopHomePage extends StatefulWidget {
   State<DesktopHomePage> createState() => _DesktopHomePageState();
 }
 
-const borderColor = Color(0xFF2F65BA);
+const borderColor = Color(0xFF5F5F5F);
 
 class _DesktopHomePageState extends State<DesktopHomePage>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
@@ -155,8 +155,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                         stopped
                             ? Icons.pause_circle_filled
                             : Icons.play_circle_fill,
-                        color:
-                            stopped ? Colors.orange : const Color(0xFF32BEA6),
+                        color: stopped ? kColorWarn : teamActiveColor(),
                         size: 18),
                 const SizedBox(width: 6),
                 Text(
@@ -435,7 +434,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         return Row(
           children: [
             Icon(stopped ? Icons.pause_circle_filled : Icons.play_circle_fill,
-                    color: stopped ? Colors.orange : const Color(0xFF32BEA6),
+                    color: stopped ? kColorWarn : teamActiveColor(),
                     size: 18)
                 .marginOnly(right: 8),
             Expanded(
@@ -527,7 +526,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                       allowedText,
                       style: TextStyle(
                           fontSize: 14,
-                          color: allowed.isEmpty ? Colors.orange : null),
+                          color: allowed.isEmpty ? Color(0xFFA5A5A5) : null),
                     ),
                   ],
                 ),
@@ -873,8 +872,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
                 colors: [
-                  Color.fromARGB(255, 226, 66, 188),
-                  Color.fromARGB(255, 244, 114, 124),
+                  Color.fromARGB(255, 128, 128, 128),
+                  Color.fromARGB(255, 154, 154, 154),
                 ],
               )),
               padding: EdgeInsets.all(20),
@@ -1290,7 +1289,7 @@ void setPasswordDialog({VoidCallback? notEmptyCallback}) async {
             if (statusTip.isNotEmpty)
               Row(
                 children: [
-                  Icon(Icons.info, color: Colors.amber, size: 18)
+                  Icon(Icons.info, color: Color(0xFFBEBEBE), size: 18)
                       .marginOnly(right: 6),
                   Expanded(
                       child: Text(
@@ -1312,12 +1311,12 @@ void setPasswordDialog({VoidCallback? notEmptyCallback}) async {
                           e.name,
                           style: TextStyle(
                               color: checked
-                                  ? const Color(0xFF0A9471)
-                                  : Color.fromARGB(255, 198, 86, 157)),
+                                  ? const Color(0xFF676767)
+                                  : Color.fromARGB(255, 128, 128, 128)),
                         ),
                         backgroundColor: checked
-                            ? const Color(0xFFD0F7ED)
-                            : Color.fromARGB(255, 247, 205, 232));
+                            ? const Color(0xFFEAEAEA)
+                            : Color.fromARGB(255, 221, 221, 221));
                   }).toList(),
                 ))
           ],
@@ -1349,7 +1348,7 @@ void setPasswordDialog({VoidCallback? notEmptyCallback}) async {
             close();
           },
           buttonStyle: ButtonStyle(
-              backgroundColor: MaterialStatePropertyAll(Colors.red)),
+              backgroundColor: MaterialStatePropertyAll(Color(0xFF767676))),
         );
         final okButton = dialogButton(
           "OK",

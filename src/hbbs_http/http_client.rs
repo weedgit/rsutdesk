@@ -123,6 +123,10 @@ pub fn get_url_for_tls<'a>(url: &'a str, proxy_conf: &'a Option<Socks5Server>) -
 }
 
 pub fn create_http_client_with_url(url: &str) -> SyncClient {
+    // Team edition: building a client here would probe the server's TLS over the network.
+    if base::team::LAN_ONLY {
+        return create_http_client(TlsType::Rustls, false);
+    }
     let proxy_conf = Config::get_socks();
     let tls_url = get_url_for_tls(url, &proxy_conf);
     let tls_type = get_cached_tls_type(tls_url);
@@ -140,6 +144,7 @@ pub fn create_http_client_with_url(url: &str) -> SyncClient {
 }
 
 pub fn create_http_client_with_url_strict(url: &str) -> ResultType<SyncClient> {
+    crate::team_offline_guard()?;
     let parsed_url = url::Url::parse(url)?;
     if parsed_url.scheme() != "https" {
         bail!("Strict HTTP client requires HTTPS: {}", url);
@@ -258,6 +263,9 @@ fn create_http_client_with_url_(
 }
 
 pub async fn create_http_client_async_with_url(url: &str) -> AsyncClient {
+    if base::team::LAN_ONLY {
+        return create_http_client_async(TlsType::Rustls, false);
+    }
     let proxy_conf = Config::get_socks();
     let tls_url = get_url_for_tls(url, &proxy_conf);
     let tls_type = get_cached_tls_type(tls_url);
@@ -276,6 +284,7 @@ pub async fn create_http_client_async_with_url(url: &str) -> AsyncClient {
 }
 
 pub async fn create_http_client_async_with_url_strict(url: &str) -> ResultType<AsyncClient> {
+    crate::team_offline_guard()?;
     let parsed_url = url::Url::parse(url)?;
     if parsed_url.scheme() != "https" {
         bail!("Strict HTTP client requires HTTPS: {}", url);

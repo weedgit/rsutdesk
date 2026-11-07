@@ -225,7 +225,7 @@ class FileModel {
       return CustomAlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.warning_rounded, color: Colors.red),
+            const Icon(Icons.warning_rounded, color: Color(0xFF767676)),
             Text(title).paddingOnly(
               left: 10,
             ),
@@ -889,7 +889,7 @@ class FileController {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.warning_rounded, color: Colors.red),
+            const Icon(Icons.warning_rounded, color: Color(0xFF767676)),
             Expanded(
               child: Text(title).paddingOnly(
                 left: 10,
@@ -907,7 +907,7 @@ class FileController {
               translate("This is irreversible!"),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.red,
+                color: Color(0xFF767676),
               ),
             ).paddingOnly(top: 20),
             showCheckbox

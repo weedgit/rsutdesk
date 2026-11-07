@@ -722,7 +722,7 @@ class _TerminalPageState extends State<TerminalPage>
           padding: EdgeInsets.zero,
           textStyle: const TextStyle(fontSize: 12),
           backgroundColor: isLocked
-              ? Colors.blue
+              ? Color(0xFF7E7E7E)
               : Theme.of(context).colorScheme.surfaceContainerHighest,
           foregroundColor: isLocked
               ? Colors.white

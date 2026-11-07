@@ -892,7 +892,7 @@ Future<bool> closeConfirmDialog() async {
     return CustomAlertDialog(
       title: Row(children: [
         const Icon(Icons.warning_amber_sharp,
-            color: Colors.redAccent, size: 28),
+            color: Color(0xFF868686), size: 28),
         const SizedBox(width: 10),
         Text(translate("Warning")),
       ]),
@@ -1292,7 +1292,7 @@ class _ActionIconState extends State<ActionIcon> {
       waitDuration: const Duration(seconds: 1),
       child: InkWell(
         hoverColor: widget.isClose
-            ? const Color.fromARGB(255, 196, 43, 28)
+            ? const Color.fromARGB(255, 87, 87, 87)
             : MyTheme.tabbar(context).hoverColor,
         onHover: (value) => hover.value = value,
         onTap: widget.onTap,
@@ -1420,7 +1420,7 @@ class _TabDropDownButtonState extends State<_TabDropDownButton> {
                                       setState(() => btnHover.value = false),
                                   child: Icon(Icons.close,
                                       color:
-                                          btnHover.value ? Colors.red : null)));
+                                          btnHover.value ? Color(0xFF767676) : null)));
                         } else {
                           return Offstage();
                         }
@@ -1467,7 +1467,7 @@ class TabbarTheme extends ThemeExtension<TabbarTheme> {
 
   static const light = TabbarTheme(
       selectedTabIconColor: MyTheme.accent,
-      unSelectedTabIconColor: Color.fromARGB(255, 162, 203, 241),
+      unSelectedTabIconColor: Color.fromARGB(255, 195, 195, 195),
       selectedTextColor: Colors.black,
       unSelectedTextColor: Color.fromARGB(255, 112, 112, 112),
       selectedIconColor: Color.fromARGB(255, 26, 26, 26),
@@ -1479,7 +1479,7 @@ class TabbarTheme extends ThemeExtension<TabbarTheme> {
 
   static const dark = TabbarTheme(
       selectedTabIconColor: MyTheme.accent,
-      unSelectedTabIconColor: Color.fromARGB(255, 30, 65, 98),
+      unSelectedTabIconColor: Color.fromARGB(255, 58, 58, 58),
       selectedTextColor: Colors.white,
       unSelectedTextColor: Color.fromARGB(255, 192, 192, 192),
       selectedIconColor: Color.fromARGB(255, 192, 192, 192),

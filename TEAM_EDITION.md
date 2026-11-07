@@ -26,6 +26,7 @@ The switch is `LAN_ONLY` in [libs/base/src/team.rs](libs/base/src/team.rs), and 
 | Connection | Hole punching or relay | Direct TCP to `IP:21118` |
 | Who may connect | Password / click to accept | IP on the desktop's **allowed IP list**, nothing else |
 | Permission once connected | Prompts / per-feature approval | **Full** automatically (allowed IP = full permission), no prompts |
+| Encryption | Key vouched for by the ID server | Key remembered on first connection (like SSH), every session encrypted |
 | Accounts, address book, groups | API server | Removed. Use the **Local network** list |
 | Updates | Checks rustdesk.com | Disabled |
 
@@ -34,6 +35,19 @@ until someone adds IPs.
 
 The controlled desktop still shows its running tray icon and a connection-manager window while a
 session is active, so whoever is at that machine can see it is being controlled.
+
+## No internet access
+
+The team edition never talks to the internet, in either direction:
+
+- **Outgoing:** connections go only to LAN addresses (10.x, 172.16-31.x, 192.168.x, 169.254.x,
+  IPv6 `fc00::/7` and `fe80::/10`, loopback). A name that resolves to anything else is refused,
+  and a configured proxy is never used. Every HTTP request (update checks, accounts, address
+  book, audit, recording upload, downloads, avatars) is blocked, and no STUN/NAT probes run.
+- **Incoming:** a session from a non-LAN address is refused even if the allowed IP list would
+  match it (for example `*` with a port forwarded on the router).
+- Help links in the UI (for example "Learn more") still open your browser if you click them;
+  RustDesk itself sends nothing.
 
 ## Network ports (open them on each desktop's firewall, LAN only)
 
@@ -80,6 +94,21 @@ click **refresh**. Double-click a card to connect — no password, no prompts.
 - **Alias:** right-click a card → **Rename** to give a computer a memorable name (e.g. `Build-PC`,
   `Office-VM`). The alias replaces the name on the card.
 - A desktop never lists **itself**.
+
+### Encryption
+
+Every session is end-to-end encrypted, with the same encryption stock RustDesk uses. Without an ID
+server to vouch for a desktop's key, the controller remembers each desktop's key the first time
+it connects (trust on first use, like SSH) and checks it on every later connection.
+
+- **Security key changed:** shown when a desktop presents a different key than last time. Expected
+  after RustDesk was reinstalled or its settings were reset on that desktop: click **Continue** to
+  trust the new key. If nothing like that happened, click **Disconnect**: another device may be
+  pretending to be that desktop.
+- **Insecure connection:** the desktop runs an older build that cannot encrypt. Update it.
+- Remembered keys live in `team_known_keys.toml` in the RustDesk config folder (one line per
+  desktop, keyed by the name or IP you connected with). Delete a line to forget that key.
+- Update **every** desktop: both sides need this build for sessions to be encrypted.
 
 The main window shows only the **Local network** list (Recent and Favorites are removed), the
 service **Start/Stop** control, this machine's **IP**, and its **Allowed IPs**.

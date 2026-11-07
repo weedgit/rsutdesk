@@ -135,7 +135,7 @@ class _PortForwardPageState extends State<PortForwardPage>
           offstage: pfs.isEmpty && !widget.isRDP,
           child: Container(
               height: 45,
-              color: const Color(0xFF007F00),
+              color: const Color(0xFF4B4B4B),
               child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -263,7 +263,7 @@ class _PortForwardPageState extends State<PortForwardPage>
           color: index % 2 == 0
               ? MyTheme.currentThemeMode() == ThemeMode.dark
                   ? const Color(0xFF202020)
-                  : const Color(0xFFF4F5F6)
+                  : const Color(0xFFF5F5F5)
               : Theme.of(context).colorScheme.background),
       child: Row(children: [
         text(pf.localPort.toString()),

@@ -138,7 +138,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
             child: Container(
                 alignment: AlignmentDirectional.center,
                 width: double.infinity,
-                color: Colors.pinkAccent,
+                color: Color(0xFF808080),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text(translate('Download new version'),
                     style: const TextStyle(

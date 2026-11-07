@@ -238,7 +238,7 @@ class ServiceNotRunningNotification extends StatelessWidget {
     return PaddingCard(
         title: translate("Service is not running"),
         titleIcon:
-            const Icon(Icons.warning_amber_sharp, color: Colors.redAccent),
+            const Icon(Icons.warning_amber_sharp, color: Color(0xFF868686)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -317,8 +317,8 @@ class ScamWarningDialogState extends State<ScamWarningDialog> {
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
                 colors: [
-                  Color(0xffe242bc),
-                  Color(0xfff4727c),
+                  Color(0xFF808080),
+                  Color(0xFF9A9A9A),
                 ],
               ),
             ),
@@ -407,7 +407,7 @@ class ScamWarningDialogState extends State<ScamWarningDialog> {
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
+                          backgroundColor: Color(0xFF828282),
                         ),
                         child: Text(
                           isButtonLocked
@@ -430,7 +430,7 @@ class ScamWarningDialogState extends State<ScamWarningDialog> {
                           Navigator.of(context).pop();
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
+                          backgroundColor: Color(0xFF828282),
                         ),
                         child: Text(
                           translate("Decline"),
@@ -465,8 +465,8 @@ class ServerInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final serverModel = Provider.of<ServerModel>(context);
 
-    const Color colorPositive = Colors.green;
-    const Color colorNegative = Colors.red;
+    const Color colorPositive = Color(0xFF878787);
+    const Color colorNegative = Color(0xFF767676);
     const double iconMarginRight = 15;
     const double iconSize = 24;
     const TextStyle textStyleHeading = TextStyle(
@@ -633,7 +633,7 @@ class _PermissionCheckerState extends State<PermissionChecker> {
               ? ElevatedButton.icon(
                       style: ButtonStyle(
                           backgroundColor:
-                              MaterialStateProperty.all(Colors.red)),
+                              MaterialStateProperty.all(Color(0xFF767676))),
                       icon: const Icon(Icons.stop),
                       onPressed: serverModel.toggleService,
                       label: Text(translate("Stop service")))
@@ -773,7 +773,7 @@ class ConnectionManager extends StatelessWidget {
 
   Widget _buildDisconnectButton(Client client) {
     final disconnectButton = ElevatedButton.icon(
-      style: ButtonStyle(backgroundColor: MaterialStatePropertyAll(Colors.red)),
+      style: ButtonStyle(backgroundColor: MaterialStatePropertyAll(Color(0xFF767676))),
       icon: const Icon(Icons.close),
       onPressed: () {
         bind.cmCloseConnection(connId: client.id);
@@ -787,7 +787,7 @@ class ConnectionManager extends StatelessWidget {
         0,
         ElevatedButton.icon(
           style: ButtonStyle(
-              backgroundColor: MaterialStatePropertyAll(Colors.red)),
+              backgroundColor: MaterialStatePropertyAll(Color(0xFF767676))),
           icon: const Icon(Icons.phone),
           label: Text(translate("Stop")),
           onPressed: () {

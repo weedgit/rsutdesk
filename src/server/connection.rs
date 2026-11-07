@@ -1424,6 +1424,13 @@ impl Connection {
         // Team edition: the allowed-IP list is the only access control, and an empty list
         // allows nobody.
         if base::team::LAN_ONLY {
+            // LAN only: an address from outside the local network is refused even when the
+            // allowed list would match it (e.g. `*` and a forwarded port).
+            if !base::team::is_lan_ip(addr.ip()) {
+                log::warn!("Rejected connection from {}: not a LAN address", addr.ip());
+                self.send_login_error(base::team::NOT_LAN_ERROR).await;
+                return false;
+            }
             let allowed = base::team::parse_allowed_list(&Config::get_option(
                 base::team::OPTION_ALLOWED_IPS,
             ));

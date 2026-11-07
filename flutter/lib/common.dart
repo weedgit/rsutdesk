@@ -173,8 +173,8 @@ class ColorThemeExtension extends ThemeExtension<ColorThemeExtension> {
     highlight: Color(0xFFE5E5E5),
     drag_indicator: Colors.grey[800],
     shadow: Colors.black,
-    errorBannerBg: Color(0xFFFDEEEB),
-    me: Colors.green,
+    errorBannerBg: Color(0xFFF2F2F2),
+    me: Color(0xFF878787),
     toastBg: Colors.black.withOpacity(0.6),
     toastText: Colors.white,
     divider: Colors.black38,
@@ -187,8 +187,8 @@ class ColorThemeExtension extends ThemeExtension<ColorThemeExtension> {
     highlight: Color(0xFF3F3F3F),
     drag_indicator: Colors.grey,
     shadow: Colors.grey,
-    errorBannerBg: Color(0xFF470F2D),
-    me: Colors.greenAccent,
+    errorBannerBg: Color(0xFF232323),
+    me: Color(0xFFC0C0C0),
     toastBg: Colors.white.withOpacity(0.6),
     toastText: Colors.black,
     divider: Colors.white38,
@@ -248,17 +248,17 @@ class ColorThemeExtension extends ThemeExtension<ColorThemeExtension> {
 class MyTheme {
   MyTheme._();
 
-  static const Color grayBg = Color(0xFFEFEFF2);
-  static const Color accent = Color(0xFF0071FF);
-  static const Color accent50 = Color(0x770071FF);
-  static const Color accent80 = Color(0xAA0071FF);
+  static const Color grayBg = Color(0xFFEFEFEF);
+  static const Color accent = Color(0xFF5F5F5F);
+  static const Color accent50 = Color(0x775F5F5F);
+  static const Color accent80 = Color(0xAA5F5F5F);
   static const Color canvasColor = Color(0xFF212121);
   static const Color border = Color(0xFFCCCCCC);
-  static const Color idColor = Color(0xFF00B6F0);
+  static const Color idColor = Color(0xFF868686);
   static const Color darkGray = Color.fromARGB(255, 148, 148, 148);
-  static const Color cmIdColor = Color(0xFF21790B);
+  static const Color cmIdColor = Color(0xFF525252);
   static const Color dark = Colors.black87;
-  static const Color button = Color(0xFF2C8CFF);
+  static const Color button = Color(0xFF7C7C7C);
   static const Color hoverBorder = Color(0xFF999999);
 
   // ListTile
@@ -451,8 +451,13 @@ class MyTheme {
     menuBarTheme: MenuBarThemeData(
         style:
             MenuStyle(backgroundColor: MaterialStatePropertyAll(Colors.white))),
+    // Team edition: black, white and grays only.
     colorScheme: ColorScheme.light(
-        primary: Colors.blue, secondary: accent, background: grayBg),
+        primary: Color(0xFF333333),
+        secondary: accent,
+        tertiary: accent,
+        error: Color(0xFF444444),
+        background: grayBg),
     popupMenuTheme: PopupMenuThemeData(
         color: Colors.white,
         shape: RoundedRectangleBorder(
@@ -471,9 +476,9 @@ class MyTheme {
   static ThemeData darkTheme = ThemeData(
     useMaterial3: false,
     brightness: Brightness.dark,
-    hoverColor: Color.fromARGB(255, 45, 46, 53),
-    scaffoldBackgroundColor: Color(0xFF18191E),
-    dialogBackgroundColor: Color(0xFF18191E),
+    hoverColor: Color.fromARGB(255, 46, 46, 46),
+    scaffoldBackgroundColor: Color(0xFF191919),
+    dialogBackgroundColor: Color(0xFF191919),
     appBarTheme: AppBarTheme(
       shadowColor: Colors.transparent,
     ),
@@ -483,14 +488,14 @@ class MyTheme {
         borderRadius: BorderRadius.circular(18.0),
         side: BorderSide(
           width: 1,
-          color: Color(0xFF24252B),
+          color: Color(0xFF252525),
         ),
       ),
     ),
     scrollbarTheme: scrollbarThemeDark,
     inputDecorationTheme: (isDesktop || isWebDesktop)
         ? InputDecorationTheme(
-            fillColor: Color(0xFF24252B),
+            fillColor: Color(0xFF252525),
             filled: true,
             isDense: true,
             border: OutlineInputBorder(
@@ -509,7 +514,7 @@ class MyTheme {
         color: accent80,
       ),
     ),
-    cardColor: Color(0xFF24252B),
+    cardColor: Color(0xFF252525),
     visualDensity: VisualDensity.adaptivePlatformDensity,
     tabBarTheme: const TabBarTheme(
       labelColor: Colors.white70,
@@ -543,7 +548,7 @@ class MyTheme {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        backgroundColor: Color(0xFF24252B),
+        backgroundColor: Color(0xFF252525),
         side: BorderSide(color: Colors.white12, width: 0.5),
         disabledForegroundColor: Colors.white70,
         foregroundColor: Colors.white70,
@@ -559,10 +564,13 @@ class MyTheme {
     menuBarTheme: MenuBarThemeData(
         style: MenuStyle(
             backgroundColor: MaterialStatePropertyAll(Color(0xFF121212)))),
+    // Team edition: black, white and grays only.
     colorScheme: ColorScheme.dark(
-      primary: Colors.blue,
+      primary: Color(0xFFDDDDDD),
       secondary: accent,
-      background: Color(0xFF24252B),
+      tertiary: accent,
+      error: Color(0xFFBBBBBB),
+      background: Color(0xFF252525),
     ),
     popupMenuTheme: PopupMenuThemeData(
         shape: RoundedRectangleBorder(
@@ -1153,7 +1161,7 @@ Widget createDialogContent(String text) {
     spans.add(TextSpan(
       text: match.group(0) ?? '',
       style: const TextStyle(
-        color: Colors.blue,
+        color: Color(0xFF7E7E7E),
         decoration: TextDecoration.underline,
       ),
       recognizer: TapGestureRecognizer()
@@ -1316,15 +1324,15 @@ void msgBox(SessionID sessionId, String type, String title, String text,
 
 Color? _msgboxColor(String type) {
   if (type == "input-password" || type == "custom-os-password") {
-    return Color(0xFFAD448E);
+    return Color(0xFF6C6C6C);
   }
   if (type.contains("success")) {
-    return Color(0xFF32bea6);
+    return Color(0xFF919191);
   }
   if (type.contains("error") || type == "re-input-password") {
-    return Color(0xFFE04F5F);
+    return Color(0xFF7C7C7C);
   }
-  return Color(0xFF2C8CFF);
+  return Color(0xFF7C7C7C);
 }
 
 Widget msgboxIcon(String type) {
@@ -1413,30 +1421,32 @@ Color str2color(String str, [alpha = 0xFF]) {
     hash = str.codeUnitAt(i) + ((hash << 5) - hash);
   }
   hash = hash % 16777216;
-  return Color((hash & 0xFF7FFF) | (alpha << 24));
+  // Team edition: a gray per name instead of a color.
+  final y = 0x5A + (hash % 0x46);
+  return Color.fromARGB(alpha, y, y, y);
 }
 
 Color str2color2(String str, {List<int> existing = const []}) {
   Map<String, Color> colorMap = {
-    "red": Colors.red,
-    "green": Colors.green,
-    "blue": Colors.blue,
-    "orange": Colors.orange,
-    "purple": Colors.purple,
+    "red": Color(0xFF767676),
+    "green": Color(0xFF878787),
+    "blue": Color(0xFF7E7E7E),
+    "orange": Color(0xFFA5A5A5),
+    "purple": Color(0xFF5A5A5A),
     "grey": Colors.grey,
-    "cyan": Colors.cyan,
-    "lime": Colors.lime,
-    "teal": Colors.teal,
-    "pink": Colors.pink[200]!,
-    "indigo": Colors.indigo,
-    "brown": Colors.brown,
+    "cyan": Color(0xFF878787),
+    "lime": Color(0xFFC5C5C5),
+    "teal": Color(0xFF686868),
+    "pink": Color(0xFFB1B1B1),
+    "indigo": Color(0xFF575757),
+    "brown": Color(0xFF5E5E5E),
   };
   final color = colorMap[str.toLowerCase()];
   if (color != null) {
     return color.withAlpha(0xFF);
   }
   if (str.toLowerCase() == 'yellow') {
-    return Colors.yellow.withAlpha(0xFF);
+    return Color(0xFFDDDDDD).withAlpha(0xFF);
   }
   var hash = 0;
   for (var i = 0; i < str.length; i++) {
@@ -3257,7 +3267,7 @@ Widget unreadMessageCountBuilder(RxInt? count,
         width: size ?? 16,
         height: size ?? 16,
         decoration: BoxDecoration(
-          color: Colors.red,
+          color: Color(0xFF767676),
           shape: BoxShape.circle,
         ),
         child: Center(
@@ -3304,7 +3314,7 @@ Widget buildErrorBanner(BuildContext context,
               FittedBox(
                 child: Icon(
                   Icons.info,
-                  color: Color.fromARGB(255, 249, 81, 81),
+                  color: Color.fromARGB(255, 131, 131, 131),
                 ),
               ).marginAll(4),
               Flexible(
@@ -3797,6 +3807,17 @@ Widget loadPowered(BuildContext context) {
   ).marginOnly(top: 6);
 }
 
+/// Team edition: with grays only, "on" states (online, running) use the strongest shade of the
+/// theme (near black on light, near white on dark) and "off" states use [kColorWarn].
+Color teamActiveColor() {
+  final mode = MyTheme.currentThemeMode();
+  final dark = mode == ThemeMode.dark ||
+      (mode == ThemeMode.system &&
+          WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+              Brightness.dark);
+  return dark ? const Color(0xFFF0F0F0) : const Color(0xFF202020);
+}
+
 const _kDefaultLogoAsset = 'assets/logo.png';
 const _kLightLogoAsset = 'assets/logo_light.png';
 const _kDarkLogoAsset = 'assets/logo_dark.png';
@@ -3898,14 +3919,14 @@ Widget _buildPresetPasswordWarning() {
     return SizedBox.shrink();
   }
   return Container(
-    color: Colors.yellow,
+    color: Color(0xFFDDDDDD),
     child: Column(
       children: [
         Align(
             child: Text(
           translate("Security Alert"),
           style: TextStyle(
-            color: Colors.red,
+            color: Color(0xFF767676),
             fontSize:
                 18, // https://github.com/rustdesk/rustdesk-server-pro/issues/261
             fontWeight: FontWeight.bold,
@@ -3913,7 +3934,7 @@ Widget _buildPresetPasswordWarning() {
         )).paddingOnly(bottom: 8),
         Text(
           translate("preset_password_warning"),
-          style: TextStyle(color: Colors.red),
+          style: TextStyle(color: Color(0xFF767676)),
         )
       ],
     ).paddingAll(8),
@@ -4114,7 +4135,7 @@ Widget netWorkErrorWidget() {
               child: Text(translate("Retry")))
           .marginSymmetric(vertical: 16),
       SelectableText(gFFI.userModel.networkError.value,
-          style: TextStyle(fontSize: 11, color: Colors.red)),
+          style: TextStyle(fontSize: 11, color: Color(0xFF767676))),
     ],
   ));
 }
@@ -4342,7 +4363,9 @@ Widget? buildAvatarWidget({
         imageProvider = MemoryImage(base64Decode(trimmed.substring(comma + 1)));
       } catch (_) {}
     }
-  } else if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+  } else if (!kTeamLanOnly &&
+      (trimmed.startsWith('http://') || trimmed.startsWith('https://'))) {
+    // Team edition: never fetch images from the internet.
     imageProvider = NetworkImage(trimmed);
   }
 

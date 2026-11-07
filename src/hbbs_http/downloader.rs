@@ -197,6 +197,7 @@ async fn do_download(
     request: DownloadRequest,
     mut rx_cancel: UnboundedReceiver<()>,
 ) -> ResultType<bool> {
+    crate::team_offline_guard()?;
     let client = create_http_client_async_with_url_strict(&request.url).await?;
 
     let mut is_all_downloaded = false;

@@ -15,6 +15,7 @@ mod server;
 pub use self::server::*;
 mod client;
 mod lan;
+mod team_keys;
 #[cfg(all(windows, feature = "flutter"))]
 mod team_hotkey;
 #[cfg(not(any(target_os = "ios")))]

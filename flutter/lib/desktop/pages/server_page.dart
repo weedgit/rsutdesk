@@ -462,8 +462,8 @@ class _CmHeaderState extends State<_CmHeader>
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
           colors: [
-            Color(0xff00bfe1),
-            Color(0xff0071ff),
+            Color(0xFF8A8A8A),
+            Color(0xFF5F5F5F),
           ],
         ),
       ),
@@ -960,7 +960,7 @@ class _CmControlPanel extends StatelessWidget {
               Expanded(
                 child: buildButton(
                   context,
-                  color: Colors.red,
+                  color: Color(0xFF767676),
                   onClick: () => closeVoiceCall(),
                   icon: Icon(
                     Icons.call_end_rounded,
@@ -993,7 +993,7 @@ class _CmControlPanel extends StatelessWidget {
               Expanded(
                 child: buildButton(
                   context,
-                  color: Colors.red,
+                  color: Color(0xFF767676),
                   onClick: () => handleVoiceCall(false),
                   icon: Icon(
                     Icons.phone_disabled_rounded,
@@ -1010,7 +1010,7 @@ class _CmControlPanel extends StatelessWidget {
         Offstage(
           offstage: !client.fromSwitch,
           child: buildButton(context,
-              color: Colors.purple,
+              color: Color(0xFF5A5A5A),
               onClick: () => handleSwitchBack(context),
               icon: Icon(Icons.reply, color: Colors.white),
               text: "Switch Sides",
@@ -1038,7 +1038,7 @@ class _CmControlPanel extends StatelessWidget {
           children: [
             Expanded(
               child: buildButton(context,
-                  color: Colors.redAccent,
+                  color: Color(0xFF868686),
                   onClick: handleDisconnect,
                   text: 'Disconnect',
                   icon: Icon(
@@ -1083,7 +1083,7 @@ class _CmControlPanel extends StatelessWidget {
       children: [
         Offstage(
           offstage: !showElevation || !showAccept,
-          child: buildButton(context, color: Colors.green[700], onClick: () {
+          child: buildButton(context, color: Color(0xFF6B6B6B), onClick: () {
             handleAccept(context);
             handleElevate(context);
             windowManager.minimize();

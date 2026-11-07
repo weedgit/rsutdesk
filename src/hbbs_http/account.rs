@@ -147,6 +147,9 @@ impl OidcSession {
     }
 
     fn ensure_client(api_server: &str) {
+        if base::team::LAN_ONLY {
+            return;
+        }
         let mut write_guard = OIDC_SESSION.write().unwrap();
         if write_guard.warmed_api_server.as_deref() == Some(api_server) {
             return;

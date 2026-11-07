@@ -163,12 +163,12 @@ void changeIdDialog() {
                             e.name,
                             style: TextStyle(
                                 color: checked
-                                    ? const Color(0xFF0A9471)
-                                    : Color.fromARGB(255, 198, 86, 157)),
+                                    ? const Color(0xFF676767)
+                                    : Color.fromARGB(255, 128, 128, 128)),
                           ),
                           backgroundColor: checked
-                              ? const Color(0xFFD0F7ED)
-                              : Color.fromARGB(255, 247, 205, 232));
+                              ? const Color(0xFFEAEAEA)
+                              : Color.fromARGB(255, 221, 221, 221));
                     }).toList(),
                   )).marginOnly(bottom: 8)
               : SizedBox.shrink(),
@@ -1274,7 +1274,7 @@ void showRequestElevationDialog(
     padding: EdgeInsets.fromLTRB(10, 8, 8, 8),
     decoration: BoxDecoration(
       color: MyTheme.currentThemeMode() == ThemeMode.dark
-          ? Color.fromARGB(135, 87, 87, 90)
+          ? Color.fromARGB(135, 87, 87, 87)
           : Colors.grey[100],
       borderRadius: BorderRadius.circular(8),
       border: Border.all(color: Colors.grey),
@@ -1446,7 +1446,7 @@ void showRestartRemoteDevice(PeerInfo pi, String id, SessionID sessionId,
   final res = await dialogManager
       .show<bool>((setState, close, context) => CustomAlertDialog(
             title: Row(children: [
-              Icon(Icons.warning_rounded, color: Colors.redAccent, size: 28),
+              Icon(Icons.warning_rounded, color: Color(0xFF868686), size: 28),
               Flexible(
                   child: Text(translate("Restart remote device"))
                       .paddingOnly(left: 10)),
@@ -1946,7 +1946,7 @@ int? _validateTrackpadSpeed(String text) {
     BotToast.showText(
       text:
           '${translate('Invalid format')}: $kMinTrackpadSpeed-$kMaxTrackpadSpeed',
-      contentColor: Colors.red,
+      contentColor: Color(0xFF767676),
     );
     return null;
   }
@@ -1971,7 +1971,7 @@ void _showTrackpadSpeedSaveError(Object error, StackTrace stackTrace) {
   debugPrintStack(stackTrace: stackTrace);
   BotToast.showText(
     text: translate('Failed'),
-    contentColor: Colors.red,
+    contentColor: Color(0xFF767676),
   );
 }
 
@@ -2060,7 +2060,7 @@ void deleteConfirmDialog(Function onSubmit, String title) async {
           children: [
             Icon(
               Icons.delete_rounded,
-              color: Colors.red,
+              color: Color(0xFF767676),
             ),
             Expanded(
               child: Text(title, overflow: TextOverflow.ellipsis).paddingOnly(
@@ -2302,7 +2302,7 @@ void changeBot({Function()? callback}) async {
               .marginOnly(bottom: 12),
           Row(children: [Expanded(child: codeField)]),
           if (errorText != '')
-            Text(errorText, style: TextStyle(color: Colors.red))
+            Text(errorText, style: TextStyle(color: Color(0xFF767676)))
                 .marginOnly(top: 12),
         ],
       ),
@@ -2520,7 +2520,7 @@ void addPeersToAbDialog(
       showToast(translate('Successful'));
       return true;
     } else {
-      BotToast.showText(text: errMsg, contentColor: Colors.red);
+      BotToast.showText(text: errMsg, contentColor: Color(0xFF767676));
       return false;
     }
   }
@@ -2551,7 +2551,7 @@ void addPeersToAbDialog(
       if (controller.text != gFFI.abModel.translatedName(currentName.value)) {
         BotToast.showText(
             text: 'illegal address book name: ${controller.text}',
-            contentColor: Colors.red);
+            contentColor: Color(0xFF767676));
         return;
       }
       isInProgress.value = true;
@@ -2671,7 +2671,7 @@ void setSharedAbPasswordDialog(String abName, Peer peer) {
             ).workaroundFreezeLinuxMint(),
             if (!gFFI.abModel.current.isPersonal())
               Row(children: [
-                Icon(Icons.info, color: Colors.amber).marginOnly(right: 4),
+                Icon(Icons.info, color: Color(0xFFBEBEBE)).marginOnly(right: 4),
                 Text(
                   translate('share_warning_tip'),
                   style: TextStyle(fontSize: 12),
@@ -2693,7 +2693,7 @@ void setSharedAbPasswordDialog(String abName, Peer peer) {
             icon: Icon(Icons.delete_outline_rounded),
             onPressed: () => change(''),
             buttonStyle: ButtonStyle(
-                backgroundColor: MaterialStatePropertyAll(Colors.red)),
+                backgroundColor: MaterialStatePropertyAll(Color(0xFF767676))),
           ),
         Obx(() => dialogButton(
               "OK",

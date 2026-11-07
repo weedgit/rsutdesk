@@ -384,7 +384,7 @@ class ServerModel with ChangeNotifier {
         return CustomAlertDialog(
           title: Row(children: [
             const Icon(Icons.warning_amber_sharp,
-                color: Colors.redAccent, size: 28),
+                color: Color(0xFF868686), size: 28),
             const SizedBox(width: 10),
             Text(translate("Warning")),
           ]),
@@ -419,7 +419,7 @@ class ServerModel with ChangeNotifier {
         return CustomAlertDialog(
           title: Row(children: [
             const Icon(Icons.warning_amber_sharp,
-                color: Colors.redAccent, size: 28),
+                color: Color(0xFF868686), size: 28),
             const SizedBox(width: 10),
             Text(translate("Warning")),
           ]),

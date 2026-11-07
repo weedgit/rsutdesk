@@ -58,7 +58,7 @@ class ChatPage extends StatelessWidget implements PageShape {
                       height: 10,
                       decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Color.fromARGB(255, 46, 205, 139)),
+                          color: Color.fromARGB(255, 150, 150, 150)),
                     ).marginSymmetric(horizontal: 2),
                   if (client != null)
                     unreadMessageCountBuilder(client.unreadChatMessageCount)
@@ -159,7 +159,7 @@ class ChatPage extends StatelessWidget implements PageShape {
                         final isOwnMessage = message.user.id.isBlank!;
                         return defaultMessageDecoration(
                           color:
-                              isOwnMessage ? MyTheme.accent : Colors.blueGrey,
+                              isOwnMessage ? MyTheme.accent : Color(0xFF767676),
                           borderTopLeft: 8,
                           borderTopRight: 8,
                           borderBottomRight: isOwnMessage ? 2 : 8,

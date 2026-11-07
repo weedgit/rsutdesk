@@ -439,7 +439,7 @@ class _PeerTabPageState extends State<PeerTabPage>
 
           deleteConfirmDialog(onSubmit, translate('Delete'));
         },
-        child: Icon(Icons.delete, color: Colors.red));
+        child: Icon(Icons.delete, color: Color(0xFF767676)));
   }
 
   Widget addSelectionToFav() {

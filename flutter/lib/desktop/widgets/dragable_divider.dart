@@ -11,7 +11,7 @@ class DraggableDivider extends StatefulWidget {
     super.key,
     this.axis = Axis.horizontal,
     this.thickness = 1.0,
-    this.color = const Color.fromARGB(200, 177, 175, 175),
+    this.color = const Color.fromARGB(200, 176, 176, 176),
     this.onPointerMove,
     this.padding = const EdgeInsets.symmetric(horizontal: 1.0),
     this.onHover,

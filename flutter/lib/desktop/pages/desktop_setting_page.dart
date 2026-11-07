@@ -1246,7 +1246,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
               : allowed.join('\n'),
           style: TextStyle(
               fontWeight: FontWeight.w500,
-              color: allowed.isEmpty ? Colors.orange : null),
+              color: allowed.isEmpty ? Color(0xFFA5A5A5) : null),
         ),
       ).marginOnly(left: _kContentHMargin, top: 8),
       Align(
@@ -1672,7 +1672,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                     offstage: !hasWhitelist.value,
                     child: MouseRegion(
                       child: const Icon(Icons.warning_amber_rounded,
-                              color: Color.fromARGB(255, 255, 204, 0))
+                              color: Color.fromARGB(255, 196, 196, 196))
                           .marginOnly(right: 5),
                       cursor: SystemMouseCursors.click,
                     ),
@@ -1722,7 +1722,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                   offstage: !hasIdWhitelist.value,
                   child: MouseRegion(
                     child: const Icon(Icons.warning_amber_rounded,
-                            color: Color.fromARGB(255, 255, 204, 0))
+                            color: Color.fromARGB(255, 196, 196, 196))
                         .marginOnly(right: 5),
                     cursor: SystemMouseCursors.click,
                   ),
@@ -2559,7 +2559,7 @@ class __PrinterState extends State<_Printer> {
                   child: Text(failedMsg.value,
                           style: DefaultTextStyle.of(context)
                               .style
-                              .copyWith(color: Colors.red))
+                              .copyWith(color: Color(0xFF767676)))
                       .marginOnly(bottom: 10.0)),
         ),
         _Button('Install {$appName} Printer', () {
@@ -2718,7 +2718,7 @@ class _AboutState extends State<_About> {
                       style: linkStyle,
                     ).marginSymmetric(vertical: 4.0)),
               Container(
-                decoration: const BoxDecoration(color: Color(0xFF2c8cff)),
+                decoration: const BoxDecoration(color: Color(0xFF7C7C7C)),
                 padding:
                     const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
                 child: SelectionArea(
@@ -3056,7 +3056,7 @@ class _WaylandCardState extends State<WaylandCard> {
                 child: Text(_clearShortcutsInhibitorFailedMsg.value,
                         style: DefaultTextStyle.of(context)
                             .style
-                            .copyWith(color: Colors.red))
+                            .copyWith(color: Color(0xFF767676)))
                     .marginOnly(bottom: 10.0)),
       ),
       _Button(
