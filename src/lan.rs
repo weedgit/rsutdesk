@@ -281,6 +281,7 @@ fn wait_response(
         Ok(addr) => addr.ip().is_unspecified(),
     };
     let mut mac: Option<String> = None;
+    let own_ips = own_ip_addrs();
 
     socket.set_read_timeout(timeout)?;
     loop {
@@ -290,6 +291,12 @@ fn wait_response(
                 match msg_in.union {
                     Some(rendezvous_message::Union::PeerDiscovery(p)) => {
                         last_recv_time = Instant::now();
+                        // An answer from one of this machine's own addresses is this machine.
+                        // The MAC check below misses that when the answer arrives on another
+                        // adapter (VPN, Hyper-V, Wi-Fi + Ethernet) or one without a MAC.
+                        if p.cmd == "pong" && own_ips.contains(&addr.ip()) {
+                            continue;
+                        }
                         if p.cmd == "pong" {
                             if !crate::common::is_valid_untrusted_peer_id(&p.id) {
                                 log::warn!(
@@ -360,8 +367,36 @@ fn spawn_wait_responses(sockets: Vec<UdpSocket>) -> UnboundedReceiver<config::Di
     rx
 }
 
+/// Every address of this machine, on all adapters, including loopback.
+fn own_ip_addrs() -> HashSet<IpAddr> {
+    let mut ips: HashSet<IpAddr> = HashSet::new();
+    ips.insert(IpAddr::V4(Ipv4Addr::LOCALHOST));
+    ips.insert(IpAddr::V6(std::net::Ipv6Addr::LOCALHOST));
+    for interface in default_net::get_interfaces() {
+        for v4 in &interface.ipv4 {
+            ips.insert(IpAddr::V4(v4.addr));
+        }
+        for v6 in &interface.ipv6 {
+            ips.insert(IpAddr::V6(v6.addr));
+        }
+    }
+    ips
+}
+
+/// True if a stored LAN peer is really this machine (an earlier discovery let it through).
+fn is_own_machine(peer: &config::DiscoveryPeer, own_ips: &HashSet<IpAddr>) -> bool {
+    !peer.ip_mac.is_empty()
+        && peer
+            .ip_mac
+            .keys()
+            .all(|ip| ip.parse::<IpAddr>().map_or(false, |ip| own_ips.contains(&ip)))
+}
+
 async fn handle_received_peers(mut rx: UnboundedReceiver<config::DiscoveryPeer>) -> ResultType<()> {
     let mut peers = config::LanPeers::load().peers;
+    // Drop this machine if an older build saved it into the list.
+    let own_ips = own_ip_addrs();
+    peers.retain(|peer| !is_own_machine(peer, &own_ips));
     peers.iter_mut().for_each(|peer| {
         peer.online = false;
     });
