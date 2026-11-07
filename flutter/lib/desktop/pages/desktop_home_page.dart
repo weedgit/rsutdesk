@@ -90,6 +90,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   Widget buildTeamBottomBar(BuildContext context) {
     final RxBool serviceStop = Get.find<RxBool>(tag: 'stop-service');
     final RxBool btnEnabled = true.obs;
+    final RxBool refreshing = false.obs;
     final textColor = Theme.of(context).textTheme.titleLarge?.color;
     return Container(
       height: 46,
@@ -135,40 +136,75 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           const SizedBox(width: 8),
           Obx(() {
             final stopped = serviceStop.value;
+            final busy = !btnEnabled.value;
+            final statusText = busy
+                ? (stopped
+                    ? translate('Starting...')
+                    : translate('Stopping...'))
+                : (stopped ? translate('Service is not running') : 'Server');
             return Row(
               children: [
-                Icon(
-                    stopped
-                        ? Icons.pause_circle_filled
-                        : Icons.play_circle_fill,
-                    color: stopped ? Colors.orange : const Color(0xFF32BEA6),
-                    size: 18),
+                busy
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: textColor),
+                      )
+                    : Icon(
+                        stopped
+                            ? Icons.pause_circle_filled
+                            : Icons.play_circle_fill,
+                        color:
+                            stopped ? Colors.orange : const Color(0xFF32BEA6),
+                        size: 18),
                 const SizedBox(width: 6),
                 Text(
-                  stopped ? translate('Service is not running') : 'Server',
+                  statusText,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(width: 10),
                 ElevatedButton(
-                  onPressed: btnEnabled.value
-                      ? () async {
+                  onPressed: busy
+                      ? null
+                      : () async {
                           btnEnabled.value = false;
                           await start_service(stopped);
                           Future.delayed(const Duration(seconds: 1),
                               () => btnEnabled.value = true);
-                        }
-                      : null,
-                  child: Text(translate(stopped ? 'Start' : 'Stop')),
+                        },
+                  child: busy
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text(translate(stopped ? 'Start' : 'Stop')),
                 ),
               ],
             );
           }),
-          IconButton(
-            tooltip: translate('Refresh'),
-            splashRadius: 18,
-            icon: const Icon(Icons.refresh, size: 18),
-            onPressed: () => bind.mainDiscover(),
-          ),
+          Obx(() => IconButton(
+                tooltip: translate('Refresh'),
+                splashRadius: 18,
+                icon: refreshing.value
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: textColor),
+                      )
+                    : const Icon(Icons.refresh, size: 18),
+                onPressed: refreshing.value
+                    ? null
+                    : () async {
+                        refreshing.value = true;
+                        await bind.mainDiscover();
+                        Future.delayed(const Duration(seconds: 2),
+                            () => refreshing.value = false);
+                      },
+              )),
         ],
       ),
     );
