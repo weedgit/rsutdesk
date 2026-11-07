@@ -1531,7 +1531,11 @@ impl Connection {
             return false;
         }
         #[cfg(not(any(target_os = "android", target_os = "ios")))]
-        if crate::is_server() && Config::get_option("allow-only-conn-window-open") == "Y" {
+        // Team edition: machines must be reachable even when nobody has the window open.
+        if !base::team::LAN_ONLY
+            && crate::is_server()
+            && Config::get_option("allow-only-conn-window-open") == "Y"
+        {
             if !crate::check_process("", !crate::platform::is_root()) {
                 self.send_login_error("The main window is not open").await;
                 return false;
@@ -2716,6 +2720,10 @@ impl Connection {
 
     #[inline]
     pub fn is_permission_enabled_locally(enable_prefix_option: &str) -> bool {
+        // Team edition: an allowed IP gets full access, so every permission is on.
+        if base::team::LAN_ONLY {
+            return true;
+        }
         #[cfg(feature = "flutter")]
         #[cfg(not(any(target_os = "android", target_os = "ios")))]
         {

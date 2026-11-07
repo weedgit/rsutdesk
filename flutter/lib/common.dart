@@ -4030,7 +4030,8 @@ bool get isCustomClient {
 get defaultOptionLang => isCustomClient ? 'default' : '';
 get defaultOptionTheme => isCustomClient ? 'system' : '';
 get defaultOptionYes => isCustomClient ? 'Y' : '';
-get defaultOptionNo => isCustomClient ? 'N' : '';
+// Team edition sets some defaults to 'Y', so unticking must store an explicit 'N'.
+get defaultOptionNo => (isCustomClient || kTeamLanOnly) ? 'N' : '';
 get defaultOptionWhitelist => isCustomClient ? ',' : '';
 get defaultOptionAccessMode => isCustomClient ? 'custom' : '';
 get defaultOptionApproveMode => isCustomClient ? 'password-click' : '';

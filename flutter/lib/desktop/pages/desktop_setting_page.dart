@@ -577,6 +577,8 @@ class _GeneralState extends State<_General> {
           kOptionOpenNewConnInTabs,
           isServer: false,
         ),
+        // Team edition: port forwarding is not used.
+        if (!kTeamLanOnly)
         Tooltip(
           message: translate('port-forward-mux-tip'),
           child: _OptionCheckBox(
@@ -1068,8 +1070,9 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
               child: Column(children: [
                 // Team edition: access is decided by the allowed-IP list only, so the
                 // password, 2FA and ID cards are not shown.
+                // Allowed IPs also get full access, so no Permissions card.
                 if (kTeamLanOnly) teamAccess(context),
-                permissions(context),
+                if (!kTeamLanOnly) permissions(context),
                 if (!kTeamLanOnly) password(context),
                 if (!kTeamLanOnly) _Card(title: '2FA', children: [tfa()]),
                 if (!kTeamLanOnly && !isChangeIdDisabled())
@@ -1526,9 +1529,11 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
   Widget more(BuildContext context) {
     bool enabled = !locked;
     return _Card(title: 'Security', children: [
-      shareRdp(context, enabled),
-      _OptionCheckBox(context, 'Deny LAN discovery', 'enable-lan-discovery',
-          reverse: true, enabled: enabled),
+      // Team edition: no RDP sharing, and every machine is always discoverable.
+      if (!kTeamLanOnly) shareRdp(context, enabled),
+      if (!kTeamLanOnly)
+        _OptionCheckBox(context, 'Deny LAN discovery', 'enable-lan-discovery',
+            reverse: true, enabled: enabled),
       // Team edition: direct access is always on (port 21118) and the allowed-IP list has
       // its own card at the top.
       if (!kTeamLanOnly) ...directIp(context),
@@ -1538,7 +1543,8 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
       _OptionCheckBox(context, 'keep-awake-during-incoming-sessions-label',
           kOptionKeepAwakeDuringIncomingSessions,
           reverse: false, enabled: enabled),
-      if (bind.mainIsInstalled())
+      // Team edition: machines must be reachable without the window open.
+      if (bind.mainIsInstalled() && !kTeamLanOnly)
         _OptionCheckBox(context, 'allow-only-conn-window-open-tip',
             'allow-only-conn-window-open',
             reverse: false, enabled: enabled),

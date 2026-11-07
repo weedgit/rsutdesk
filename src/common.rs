@@ -2507,7 +2507,26 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
     ThrottledInterval::new(i)
 }
 
+/// Team edition: LAN-friendly defaults for new sessions. Each person can still
+/// change them in Settings > Display or per session.
+fn apply_team_display_defaults() {
+    if !base::team::LAN_ONLY {
+        return;
+    }
+    let mut defaults = config::DEFAULT_DISPLAY_SETTINGS.write().unwrap();
+    for (k, v) in [
+        (keys::OPTION_VIEW_STYLE, "adaptive"),
+        (keys::OPTION_IMAGE_QUALITY, "best"),
+        (keys::OPTION_I444, "Y"),
+        (keys::OPTION_ENABLE_FILE_COPY_PASTE, "Y"),
+        ("lock_after_session_end", "Y"),
+    ] {
+        defaults.entry(k.to_owned()).or_insert_with(|| v.to_owned());
+    }
+}
+
 pub fn load_custom_client() {
+    apply_team_display_defaults();
     #[cfg(debug_assertions)]
     if let Ok(data) = std::fs::read_to_string("./custom.txt") {
         read_custom_client(data.trim());

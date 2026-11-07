@@ -35,11 +35,13 @@ pub(super) fn start_listening() -> ResultType<()> {
             if let Ok(msg_in) = Message::parse_from_bytes(&buf[0..len]) {
                 match msg_in.union {
                     Some(rendezvous_message::Union::PeerDiscovery(p)) => {
+                        // Team edition: every machine always answers discovery.
                         if p.cmd == "ping"
-                            && config::option2bool(
-                                "enable-lan-discovery",
-                                &Config::get_option("enable-lan-discovery"),
-                            )
+                            && (base::team::LAN_ONLY
+                                || config::option2bool(
+                                    "enable-lan-discovery",
+                                    &Config::get_option("enable-lan-discovery"),
+                                ))
                         {
                             let id = Config::get_id();
                             if p.id == id {
