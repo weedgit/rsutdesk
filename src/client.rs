@@ -5132,6 +5132,12 @@ pub trait Interface: Send + Clone + 'static + Sized {
         // force relay
         let errno = errno::errno().0;
         log::error!("Connection closed: {err}({errno})");
+        // Team edition: there is no relay on a LAN, so no "Connect via relay"; say in plain words
+        // what happened. A plain error box keeps Close and Retry (which counts down and retries).
+        if base::team::LAN_ONLY {
+            self.msgbox("error", title, &team_connection_error_text(&text, errno), "");
+            return;
+        }
         if direct == Some(true)
             && ((cfg!(windows) && (errno == 10054 || err.contains("10054")))
                 || (!cfg!(windows) && (errno == 104 || err.contains("104")))
@@ -5350,6 +5356,38 @@ lazy_static::lazy_static! {
 /// * `title` - The title of the message.
 /// * `text` - The text of the message.
 #[inline]
+/// Team edition: a connection error in plain words, with the OS error number as a short detail.
+/// Errors it does not recognize are shown as they are. The plain texts avoid the words
+/// `check_if_retry` treats as final ("failed", "handshake", ...), so the box keeps its Retry.
+fn team_connection_error_text(err: &str, errno: i32) -> String {
+    let lower = err.to_lowercase();
+    let code = lower
+        .split("os error ")
+        .nth(1)
+        .and_then(|s| s.split(|c: char| !c.is_ascii_digit()).next())
+        .and_then(|s| s.parse::<i32>().ok());
+    let is = |codes: &[i32], words: &[&str]| {
+        codes.contains(&errno)
+            || code.map_or(false, |c| codes.contains(&c))
+            || words.iter().any(|w| lower.contains(w))
+    };
+    let plain = if is(&[10054, 104], &["forcibly closed", "reset by peer", "connection reset"]) {
+        "The other computer closed the connection. RustDesk there may be restarting, so try again in a few seconds."
+    } else if is(&[10061, 111], &["actively refused", "connection refused"]) {
+        "Nothing answered on that computer. RustDesk may not be running there, or its firewall blocks port 21118."
+    } else if is(&[10060, 110], &["timed out", "deadline", "try later"]) {
+        "That computer did not answer. Check that it is switched on and on this network."
+    } else {
+        return err.to_owned();
+    };
+    match code {
+        Some(c) => format!("{plain}
+
+Details: OS error {c}"),
+        None => plain.to_owned(),
+    }
+}
+
 pub fn check_if_retry(msgtype: &str, title: &str, text: &str, retry_for_relay: bool) -> bool {
     msgtype == "error"
         && title == "Connection Error"

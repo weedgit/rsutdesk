@@ -1186,6 +1186,10 @@ class DiscoveredPeerCard extends BasePeerCard {
 
     final menuItems = await _buildConnectionMenuItems(context);
     menuItems.add(MenuEntryDivider());
+    // Team edition: give a computer a name you recognize; only this PC sees it.
+    if (kTeamLanOnly) {
+      menuItems.add(_renameAction(peer.id));
+    }
     menuItems.add(_wolAction(peer.id));
     if (isWindows) {
       menuItems.add(_createShortCutAction(peer.id));

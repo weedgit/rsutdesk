@@ -872,6 +872,20 @@ pub fn get_lan_peers() -> Vec<HashMap<&'static str, String>> {
                     "ip",
                     peer.ip_mac.keys().next().cloned().unwrap_or_default(),
                 ),
+                // The name set with Rename, so the card shows it. Only read when the peer has
+                // settings already: loading a missing one would create its file.
+                (
+                    "alias",
+                    if PeerConfig::exists(&peer.id) {
+                        PeerConfig::load(&peer.id)
+                            .options
+                            .get("alias")
+                            .cloned()
+                            .unwrap_or_default()
+                    } else {
+                        String::new()
+                    },
+                ),
             ])
         })
         .collect()
