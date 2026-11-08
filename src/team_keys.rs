@@ -98,6 +98,21 @@ pub fn check(peer: &str, sign_pk: &[u8]) -> KeyCheck {
     }
 }
 
+lazy_static::lazy_static! {
+    /// A session message read during the key exchange that belongs to the session itself.
+    static ref PENDING_FIRST: Mutex<HashMap<String, Vec<u8>>> = Default::default();
+}
+
+/// Keeps a message the key exchange read but the session must still handle.
+pub fn set_pending_first(peer: &str, bytes: Vec<u8>) {
+    PENDING_FIRST.lock().unwrap().insert(norm(peer), bytes);
+}
+
+/// The message kept by [`set_pending_first`], if any. The session handles it before reading.
+pub fn take_pending_first(peer: &str) -> Option<Vec<u8>> {
+    PENDING_FIRST.lock().unwrap().remove(&norm(peer))
+}
+
 /// The changed key of `peer` waiting for the user's decision, if any.
 pub fn take_changed(peer: &str) -> Option<Vec<u8>> {
     CHANGED.lock().unwrap().remove(&norm(peer))

@@ -1711,15 +1711,28 @@ impl Client {
     /// key vouched for by an ID server. A desktop on an older build sends no key: the session
     /// then stays unencrypted and the caller warns about it.
     async fn team_secure_connection(peer: &str, conn: &mut Stream) -> ResultType<Option<Vec<u8>>> {
+        // Never hand a message from an earlier connection to this session.
+        crate::team_keys::take_pending_first(peer);
         let bytes = match timeout(READ_TIMEOUT, conn.next()).await? {
             Some(res) => res?,
             None => bail!("Reset by the peer"),
         };
         let signed = match Message::parse_from_bytes(&bytes).map(|m| m.union) {
             Ok(Some(message::Union::SignedId(si))) => si.id,
-            _ => {
-                log::error!("LAN handshake with {}: no signed id", peer);
-                conn.send(&Message::new()).await?;
+            other => {
+                // The desktop skipped the key exchange (no key of its own), so this is already
+                // the session's first message, e.g. the login challenge. Hand it to the session
+                // instead of dropping it, or the session would wait for it forever.
+                log::warn!(
+                    "LAN handshake with {}: no signed id (got {}), not encrypted",
+                    peer,
+                    match &other {
+                        Ok(Some(u)) => format!("{:?}", u).chars().take(40).collect::<String>(),
+                        Ok(None) => "empty message".to_owned(),
+                        Err(_) => "unparsable message".to_owned(),
+                    }
+                );
+                crate::team_keys::set_pending_first(peer, bytes.to_vec());
                 return Ok(None);
             }
         };

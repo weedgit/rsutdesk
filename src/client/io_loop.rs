@@ -307,7 +307,23 @@ impl<T: InvokeUiSession> Remote<T> {
                 let mut last_rx_progress = peer.rx_progress();
                 let mut peer_gone = false;
 
+                // Team edition: a desktop without a key of its own sends the login challenge
+                // first; the key exchange kept it, so handle it before reading more.
+                let mut first_ok = true;
+                if base::team::LAN_ONLY {
+                    if let Some(bytes) = crate::team_keys::take_pending_first(&self.handler.get_id())
+                    {
+                        received = true;
+                        self.handler.update_received(true);
+                        self.data_count.fetch_add(bytes.len(), Ordering::Relaxed);
+                        first_ok = self.handle_msg_from_peer(&bytes, &mut peer).await;
+                    }
+                }
+
                 loop {
+                    if !first_ok {
+                        break;
+                    }
                     tokio::select! {
                         res = peer.next() => {
                             if let Some(res) = res {
