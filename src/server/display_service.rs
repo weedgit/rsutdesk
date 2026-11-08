@@ -884,8 +884,10 @@ pub(super) fn update_sync_displays(all: &Vec<Display>) -> Vec<DisplayInfo> {
 }
 
 pub fn is_inited_msg() -> Option<Message> {
+    // Team edition connects quietly: no "select the screen" box while a Wayland desktop's
+    // capture starts (it usually starts by itself from the saved screen-share permission).
     #[cfg(target_os = "linux")]
-    if !is_x11() {
+    if !is_x11() && !base::team::LAN_ONLY {
         return super::wayland::is_inited();
     }
     None

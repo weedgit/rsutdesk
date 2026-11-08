@@ -237,26 +237,23 @@ impl<T: InvokeUiSession> Remote<T> {
                 };
                 self.handler
                     .set_connection_type(is_secured, direct, stream_type); // flutter -> connection_ready
-                // Team edition: a desktop whose key differs from the remembered one is only
-                // trusted again once the user says so.
-                let mut rejected = false;
+                // Team edition connects quietly: no confirm windows. A changed key replaces the
+                // remembered one, and an unencrypted session (a desktop on an older build) goes
+                // ahead; both only leave a line in the log.
                 if base::team::LAN_ONLY {
-                    if let Some(new_pk) = crate::team_keys::take_changed(&self.handler.get_id()) {
-                        if client::confirm_changed_key(&self.handler, &mut self.receiver).await {
-                            crate::team_keys::trust(&self.handler.get_id(), &new_pk);
-                        } else {
-                            rejected = true;
-                        }
+                    let id = self.handler.get_id();
+                    if let Some(new_pk) = crate::team_keys::take_changed(&id) {
+                        log::warn!("LAN key of {} changed, remembering the new one", id);
+                        crate::team_keys::trust(&id, &new_pk);
+                    }
+                    if !is_secured {
+                        log::warn!("Session with {} is not encrypted (older build there)", id);
                     }
                 }
-                // Team edition encrypts direct connections too, so an unencrypted one is always
-                // worth a warning (it means the desktop runs an older build).
-                if rejected
-                    || (!is_secured
-                        && (base::team::LAN_ONLY
-                            || !crate::common::is_direct_ip_access(&self.handler.get_id()))
-                        && !client::confirm_insecure_connection(&self.handler, &mut self.receiver)
-                            .await)
+                if !base::team::LAN_ONLY
+                    && !is_secured
+                    && !crate::common::is_direct_ip_access(&self.handler.get_id())
+                    && !client::confirm_insecure_connection(&self.handler, &mut self.receiver).await
                 {
                     self.send_close_reason(&mut peer, "").await;
                     if kcp.is_some() {

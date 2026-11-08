@@ -2527,7 +2527,6 @@ fn apply_team_display_defaults() {
         (keys::OPTION_IMAGE_QUALITY, "best"),
         (keys::OPTION_I444, "Y"),
         (keys::OPTION_ENABLE_FILE_COPY_PASTE, "Y"),
-        ("lock_after_session_end", "Y"),
         // Multi-monitor PCs: monitor buttons right on the toolbar, each remote monitor in its
         // own window, spread over all local monitors.
         ("show_monitors_toolbar", "Y"),

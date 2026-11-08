@@ -5193,30 +5193,12 @@ pub async fn confirm_insecure_connection(
     interface: &impl Interface,
     receiver: &mut UnboundedReceiver<Data>,
 ) -> bool {
-    // Team edition: an unencrypted session means the desktop runs an older build.
-    let text = if base::team::LAN_ONLY {
-        "team-conn-unencrypted-tip"
-    } else {
-        "conn-e2ee-unavailable-tip"
-    };
-    confirm_connection(interface, receiver, "Insecure Connection", text).await
-}
-
-/// Team edition: the desktop shows a different key than the one remembered for it.
-pub async fn confirm_changed_key(
-    interface: &impl Interface,
-    receiver: &mut UnboundedReceiver<Data>,
-) -> bool {
-    confirm_connection(interface, receiver, "team-key-changed-title", "team-key-changed-tip").await
-}
-
-async fn confirm_connection(
-    interface: &impl Interface,
-    receiver: &mut UnboundedReceiver<Data>,
-    title: &str,
-    text: &str,
-) -> bool {
-    interface.msgbox("insecure-connection-nocancel-hasclose", title, text, "");
+    interface.msgbox(
+        "insecure-connection-nocancel-hasclose",
+        "Insecure Connection",
+        "conn-e2ee-unavailable-tip",
+        "",
+    );
     while let Some(data) = receiver.recv().await {
         match data {
             Data::ContinueInsecureConnection => return true,

@@ -5373,6 +5373,10 @@ impl Connection {
         // But it's not necessary now and we have to consider two audio services(client, server).
         crate::audio_service::set_voice_call_input_device(None, true);
         log::info!("#{} Connection closed: {}", self.inner.id(), reason);
+        // Team edition: never lock a Wayland desktop, its locked screen can't be shared, so the
+        // next session would wait for someone at that PC.
+        #[cfg(target_os = "linux")]
+        let lock = lock && !(base::team::LAN_ONLY && !crate::platform::linux::is_x11());
         if lock
             && self.lock_after_session_end
             && self.keyboard
