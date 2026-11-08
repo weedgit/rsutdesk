@@ -64,7 +64,26 @@ The team edition never talks to the internet, in either direction:
 | 21118 | TCP | Remote sessions (direct access) |
 | 21119 | UDP | LAN discovery (the Local network tab) |
 
-## Setting up a desktop
+## Installing on a team PC
+
+Build the installer folders once (see [Building](#building)), edit `allowed-ips.txt` in them
+(the machines allowed to control the PC, one IP or subnet per line), then copy the folder to each
+PC:
+
+- **Windows** (`dist/RustDesk-Team-Windows`): double-click `install.cmd`. It asks for
+  administrator rights once, installs RustDesk as a service (it starts with Windows, and the lock
+  and login screens can be controlled), adds the firewall rules and sets the allowed IP list.
+- **Ubuntu/Debian** (`dist/RustDesk-Team-Linux`): run `./install.sh`. It installs the package
+  with its dependencies and sets the allowed IP list.
+
+On Linux Wayland (Ubuntu 26.04 and similar), a locked desktop is unlocked for an allowed peer
+when it connects, with no password: GNOME refuses to share a locked screen, so this is the only way
+in. A machine nobody has logged in to (after a reboot) cannot be shared, so turn on automatic
+login there. The `--drm` build (`rustdesk-unattended-wayland`) captures the screen from the
+graphics driver instead, which also reaches the login screen on real Intel/AMD/NVIDIA graphics,
+but not in a VMware guest with 3D acceleration.
+
+## Setting up a desktop by hand
 
 1. Install the app, and choose **Install** (Windows) so it runs as a service. Only then can
    you control UAC prompts and the login screen.
@@ -150,6 +169,16 @@ libyuv, opus, aom), the Flutter SDK and `flutter_rust_bridge_codegen`. See the u
 ```bash
 python3 build.py --flutter --hwcodec --unix-file-copy-paste
 ```
+
+Team installers:
+
+- **Windows:** `team\windows\build-installer.ps1` builds the Rust core and the Flutter app and
+  packs them into `dist\RustDesk-Team-Windows\rustdesk-team-setup.exe` next to `install.cmd` and
+  `allowed-ips.txt`. `-SkipBuild` packs the current Release folder as it is.
+- **Ubuntu:** `team/linux/build-deb.sh` builds the `.deb` into `dist/RustDesk-Team-Linux` next to
+  `install.sh` and `allowed-ips.txt`. It generates the Rust/Dart bridge when missing and adds the
+  `-include cstdint` compiler flag Ubuntu 26.04 needs. `team/linux/build-deb.sh --drm` builds the
+  unattended Wayland variant.
 
 Run the policy unit tests (no vcpkg needed):
 

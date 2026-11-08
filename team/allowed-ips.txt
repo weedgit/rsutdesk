@@ -1,0 +1,4 @@
+# Computers allowed to control the PC this is installed on: full access, no password, no prompts.
+# One IP address or subnet per line (commas work too). Lines starting with # are ignored.
+# Example: 192.168.1.92   or a whole subnet: 192.168.1.0/24
+192.168.1.92

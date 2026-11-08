@@ -62,3 +62,5 @@ flutter/web/
 # Team edition: desktop only. Flutter may recreate these on build; never commit them.
 /flutter/android/
 /flutter/ios/
+/dist
+libs/portable/app_metadata.toml
