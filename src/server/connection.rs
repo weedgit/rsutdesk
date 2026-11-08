@@ -3088,6 +3088,15 @@ impl Connection {
             // Team edition: no passwords. The peer already passed the allowed-IP check in
             // `on_open`, which is the access decision; log it in as if it had clicked through.
             if base::team::LAN_ONLY {
+                // A locked Wayland desktop can't be captured: unlock it first (no password, the
+                // allowed list is the access decision), then capture starts on the desktop.
+                #[cfg(target_os = "linux")]
+                if !crate::platform::linux::is_x11() {
+                    let _ = hbb_common::tokio::task::spawn_blocking(
+                        crate::platform::linux::team_unlock_session,
+                    )
+                    .await;
+                }
                 self.set_conn_audit_primary_auth(ConnAuditPrimaryAuth::Click);
                 if !self.send_logon_response_and_keep_alive().await {
                     return false;

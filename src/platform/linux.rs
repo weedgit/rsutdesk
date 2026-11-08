@@ -1652,6 +1652,41 @@ pub fn get_default_pa_source() -> Option<(String, String)> {
     None
 }
 
+/// Team edition: unlock the seat0 session for a peer on the allowed list, with no password.
+/// A locked GNOME Wayland desktop can't be shared at all (the compositor refuses every capture
+/// while locked), so unlocking is the only way into it; the allowed list already grants full
+/// control. Waits until logind reports the session unlocked, so capture starts on the desktop.
+/// Returns whether it unlocked anything.
+pub fn team_unlock_session() -> bool {
+    if is_prelogin() {
+        return false;
+    }
+    let values = get_values_of_seat0(&[0]);
+    let Some(session) = values.first().filter(|s| !s.is_empty()).cloned() else {
+        return false;
+    };
+    if !is_session_locked(&session) {
+        return false;
+    }
+    let ok = Command::new("loginctl")
+        .args(["unlock-session", &session])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+    if !ok {
+        log::warn!("Team: failed to unlock session {}", session);
+        return false;
+    }
+    for _ in 0..30 {
+        if !is_session_locked(&session) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    log::info!("Team: unlocked session {} for an allowed peer", session);
+    true
+}
+
 pub fn lock_screen() {
     Command::new("xdg-screensaver").arg("lock").spawn().ok();
 }
