@@ -45,6 +45,27 @@ pub fn join_allowed_list(entries: &[String]) -> String {
     out.join(",")
 }
 
+/// The allowed IP list a fresh install starts with: `team/allowed-ips.txt`, built into the app so
+/// a single installer file sets it up. `#` starts a comment.
+const BUILTIN_ALLOWED_IPS_FILE: &str = include_str!("../../../team/allowed-ips.txt");
+
+/// Set once the built-in list has been considered, so a list the user empties stays empty.
+pub const OPTION_BUILTIN_ALLOWED_APPLIED: &str = "team-builtin-allowed-applied";
+
+/// The built-in allowed IP list in stored form; invalid entries are left out.
+pub fn builtin_allowed_ips() -> String {
+    builtin_from(BUILTIN_ALLOWED_IPS_FILE)
+}
+
+fn builtin_from(file: &str) -> String {
+    let entries: Vec<String> = file
+        .lines()
+        .flat_map(|l| parse_allowed_list(l.split('#').next().unwrap_or_default()))
+        .filter(|e| is_valid_entry(e))
+        .collect();
+    join_allowed_list(&entries)
+}
+
 /// True if `entry` is `*`, `0.0.0.0`, an IP address, or a CIDR range like `192.168.1.0/24`.
 pub fn is_valid_entry(entry: &str) -> bool {
     let entry = entry.trim();
@@ -148,6 +169,18 @@ pub const NOT_LAN_ERROR: &str =
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn builtin_list() {
+        let file = "# comment
+192.168.1.92
+
+10.0.0.0/8, 192.168.1.92 # dup
+not-an-ip
+";
+        assert_eq!(builtin_from(file), "192.168.1.92,10.0.0.0/8");
+        assert!(!builtin_allowed_ips().is_empty());
+    }
 
     fn ip(s: &str) -> IpAddr {
         s.parse().unwrap()

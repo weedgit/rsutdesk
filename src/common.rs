@@ -2515,6 +2515,26 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
     ThrottledInterval::new(i)
 }
 
+/// Team edition: on a fresh install, start with the allowed IP list built into the app
+/// (`team/allowed-ips.txt`), so one installer file sets a PC up. Runs once, in the service; a
+/// list already set (or later emptied on purpose) is left alone.
+pub fn apply_team_builtin_allowed_ips() {
+    if !base::team::LAN_ONLY
+        || Config::get_option(base::team::OPTION_BUILTIN_ALLOWED_APPLIED) == "Y"
+    {
+        return;
+    }
+    let builtin = base::team::builtin_allowed_ips();
+    if Config::get_option(base::team::OPTION_ALLOWED_IPS).is_empty() && !builtin.is_empty() {
+        log::info!("Team: allowed IP list starts as the built-in one: {}", builtin);
+        Config::set_option(base::team::OPTION_ALLOWED_IPS.to_owned(), builtin);
+    }
+    Config::set_option(
+        base::team::OPTION_BUILTIN_ALLOWED_APPLIED.to_owned(),
+        "Y".to_owned(),
+    );
+}
+
 /// Team edition: LAN-friendly defaults for new sessions. Each person can still
 /// change them in Settings > Display or per session.
 fn apply_team_display_defaults() {

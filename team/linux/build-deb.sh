@@ -1,6 +1,8 @@
 #!/bin/sh
-# Builds dist/RustDesk-Team-Linux on an Ubuntu build machine: the .deb plus install.sh and
-# allowed-ips.txt. Extra arguments go to build.py, e.g. --drm for the unattended Wayland variant.
+# Builds dist/rustdesk-team-<version>.deb on an Ubuntu build machine: one package that installs
+# RustDesk Team. team/allowed-ips.txt is built into the app (a fresh install starts with that
+# list), so edit it before building. Extra arguments go to build.py, e.g. --drm for the
+# unattended Wayland variant (dist/rustdesk-team-unattended-wayland-<version>.deb).
 set -e
 cd "$(dirname "$0")/../.."
 # Ubuntu 26.04's GCC no longer pulls in <cstdint> implicitly; webm-sys (libwebm) relies on it.
@@ -12,10 +14,11 @@ if [ ! -f src/bridge_generated.rs ]; then
         --dart-output ./flutter/lib/generated_bridge.dart \
         --c-output ./flutter/macos/Runner/bridge_generated.h
 fi
-rm -f rustdesk-*.deb rustdesk-unattended-wayland-*.deb
+rm -f rustdesk-*.deb
 python3 build.py --flutter "$@"
-out=dist/RustDesk-Team-Linux
-rm -rf "$out"; mkdir -p "$out"
-cp rustdesk-*.deb team/linux/install.sh team/allowed-ips.txt "$out/"
-chmod +x "$out/install.sh"
-echo "Built $out"
+mkdir -p dist
+for deb in rustdesk-*.deb; do
+    out="dist/$(echo "$deb" | sed 's/^rustdesk-/rustdesk-team-/')"
+    cp "$deb" "$out"
+    echo "Built $out"
+done

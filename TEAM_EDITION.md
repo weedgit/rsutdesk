@@ -66,15 +66,18 @@ The team edition never talks to the internet, in either direction:
 
 ## Installing on a team PC
 
-Build the installer folders once (see [Building](#building)), edit `allowed-ips.txt` in them
-(the machines allowed to control the PC, one IP or subnet per line), then copy the folder to each
-PC:
+There is one installer file per platform (see [Building](#building)). The allowed IP list in
+`team/allowed-ips.txt` is built into it: a fresh install starts with that list, so nothing needs
+setting up afterwards. It is applied once, the first time the service starts and only if the list
+is empty; after that the list is whatever is set in **Settings > Security > Allowed IPs**.
 
-- **Windows** (`dist/RustDesk-Team-Windows`): double-click `install.cmd`. It asks for
-  administrator rights once, installs RustDesk as a service (it starts with Windows, and the lock
-  and login screens can be controlled), adds the firewall rules and sets the allowed IP list.
-- **Ubuntu/Debian** (`dist/RustDesk-Team-Linux`): run `./install.sh`. It installs the package
-  with its dependencies and sets the allowed IP list.
+- **Windows** (`rustdesk-team-<version>-install.exe`): double-click it and click **Install**.
+  RustDesk installs as a service (it starts with Windows, and the lock and login screens can be
+  controlled) and adds its firewall rules.
+- **Ubuntu/Debian** (`rustdesk-team-<version>.deb`): open it with the App Center, or run
+  `sudo apt install ./rustdesk-team-<version>.deb`. To reinstall a rebuilt package of the same
+  version, use `sudo dpkg -i rustdesk-team-<version>.deb` (apt skips a version that is already
+  installed).
 
 On Linux Wayland (Ubuntu 26.04 and similar), a locked desktop is unlocked for an allowed peer
 when it connects, with no password: GNOME refuses to share a locked screen, so this is the only way
@@ -172,13 +175,14 @@ python3 build.py --flutter --hwcodec --unix-file-copy-paste
 
 Team installers:
 
+Edit `team/allowed-ips.txt` first: it is built into both installers.
+
 - **Windows:** `team\windows\build-installer.ps1` builds the Rust core and the Flutter app and
-  packs them into `dist\RustDesk-Team-Windows\rustdesk-team-setup.exe` next to `install.cmd` and
-  `allowed-ips.txt`. `-SkipBuild` packs the current Release folder as it is.
-- **Ubuntu:** `team/linux/build-deb.sh` builds the `.deb` into `dist/RustDesk-Team-Linux` next to
-  `install.sh` and `allowed-ips.txt`. It generates the Rust/Dart bridge when missing and adds the
-  `-include cstdint` compiler flag Ubuntu 26.04 needs. `team/linux/build-deb.sh --drm` builds the
-  unattended Wayland variant.
+  packs them into `dist\rustdesk-team-<version>-install.exe`. `-SkipBuild` packs the current
+  Release folder as it is.
+- **Ubuntu:** `team/linux/build-deb.sh` builds `dist/rustdesk-team-<version>.deb`. It generates
+  the Rust/Dart bridge when missing and adds the `-include cstdint` compiler flag Ubuntu 26.04
+  needs. `team/linux/build-deb.sh --drm` builds the unattended Wayland variant.
 
 Run the policy unit tests (no vcpkg needed):
 

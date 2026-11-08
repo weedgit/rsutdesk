@@ -380,6 +380,7 @@ pub fn core_main() -> Option<CoreMainAction> {
             return None;
         } else if args[0] == "--service" {
             log::info!("start --service");
+            crate::common::apply_team_builtin_allowed_ips();
             crate::start_os_service();
             return None;
         } else if args[0] == "--server" {
