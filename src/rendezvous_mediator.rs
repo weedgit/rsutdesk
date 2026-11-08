@@ -1446,7 +1446,8 @@ async fn direct_server(server: ServerPtr) {
                             server,
                             hbb_common::Stream::from(stream, local_addr),
                             addr,
-                            false,
+                            // Team edition: send our signed key so the controller can encrypt the session.
+                            base::team::LAN_ONLY,
                             ConnectionMeta::default(), // Direct connections don't have server-side user context.
                         )
                         .await
