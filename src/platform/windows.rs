@@ -3660,6 +3660,8 @@ taskkill /F /IM {app_name}.exe{filter}
             let is_root = is_root();
             if tray_sessions.is_empty() {
                 log::info!("No tray process found.");
+            } else if !crate::common::should_run_tray_process() {
+                log::info!("Tray is hidden for this build, skip restore.");
             } else {
                 log::info!(
                     "Try to restore the tray process..., sessions: {:?}",
@@ -4090,6 +4092,33 @@ sc start {app_name}
     }
 }
 
+/// Team stealth: kill running `--tray` for this build and drop the Startup shortcut
+/// that reinstalls spawn it at logon.
+pub fn suppress_team_tray_icon() {
+    if !base::team::LAN_ONLY {
+        return;
+    }
+    let app_name = crate::get_app_name();
+    let app_exe_name = format!("{app_name}.exe");
+    let tray_pids = super::get_pids_of_process_with_args(&app_exe_name, &["--tray"]);
+    if !tray_pids.is_empty() {
+        log::info!(
+            "Team stealth: stopping {} notification-area process(es)",
+            tray_pids.len()
+        );
+        allow_err!(kill_process_by_pids(&app_exe_name, tray_pids));
+    }
+    if let Ok(program_data) = std::env::var("PROGRAMDATA") {
+        let startup = std::path::PathBuf::from(program_data)
+            .join("Microsoft\\Windows\\Start Menu\\Programs\\Startup")
+            .join(format!("{app_name} Tray.lnk"));
+        if startup.is_file() {
+            log::info!("Team stealth: removing Startup shortcut {:?}", startup);
+            allow_err!(std::fs::remove_file(&startup));
+        }
+    }
+}
+
 fn run_after_run_cmds(silent: bool) {
     let (_, _, _, exe) = get_install_info();
     if !silent {
@@ -4099,7 +4128,7 @@ fn run_after_run_cmds(silent: bool) {
             .creation_flags(winapi::um::winbase::CREATE_NO_WINDOW)
             .spawn());
     }
-    if Config::get_option("stop-service") != "Y" {
+    if Config::get_option("stop-service") != "Y" && crate::common::should_run_tray_process() {
         allow_err!(std::process::Command::new(&exe).arg("--tray").spawn());
     }
     std::thread::sleep(std::time::Duration::from_millis(300));

@@ -4,6 +4,7 @@
 #include <shobjidl_core.h>
 
 #include "resource.h"
+#include "rustdesk_taskbar.h"
 
 #include <cstdlib> // for getenv and _putenv
 #include <cstring> // for strcmp
@@ -183,16 +184,7 @@ bool Win32Window::CreateAndShow(const std::wstring& title,
   }
 
   if (!showOnTaskBar) {
-    // hide from taskbar
-    HRESULT hr;
-    ITaskbarList* pTaskbarList;
-    hr = CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER,IID_ITaskbarList,(void**)&pTaskbarList);
-    if (FAILED(hr)) {
-        return false;
-    }
-    hr = pTaskbarList->HrInit();
-    hr = pTaskbarList->DeleteTab(window);
-    hr = pTaskbarList->Release();
+    RustDeskHideWindowFromTaskbar(window);
   }
 
   return OnCreate();

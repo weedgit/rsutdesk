@@ -17,6 +17,8 @@
 #include <optional>
 #include <memory>
 
+#include "rustdesk_taskbar.h"
+#include "screen_capture_exclude.h"
 #include "win32_desktop.h"
 
 namespace {
@@ -58,6 +60,11 @@ constexpr UINT kForceRedrawMaxTries = 25;
 // ForceChildRefresh(), which may block the platform thread for up to 2x100ms
 // per call (each nudge re-enters the 100ms resize wait).
 constexpr UINT kForceRedrawCheapTries = 2;
+
+// Win+Tab / shell sometimes reapplies taskbar visibility after show; refresh briefly.
+constexpr UINT_PTR kStealthRefreshTimerId = 0xFB16;
+constexpr UINT kStealthRefreshIntervalMs = 250;
+constexpr UINT kStealthRefreshMaxTries = 16;
 
 // A nonzero intermediate width can time out before Flutter resizes its surface.
 // Restoring the old width then leaves that intermediate resize pending. Zero
@@ -104,6 +111,10 @@ bool FlutterWindow::OnCreate() {
   }
   RegisterPlugins(flutter_controller_->engine());
 
+  DesktopMultiWindowSetSubWindowFirstPresentedCallback([](void *handle) {
+    RustDeskApplyShellStealth(static_cast<HWND>(handle));
+  });
+
   flutter::MethodChannel<> channel(
     flutter_controller_->engine()->messenger(),
     "org.rustdesk.rustdesk/host",
@@ -148,6 +159,8 @@ bool FlutterWindow::OnCreate() {
   DesktopMultiWindowSetWindowCreatedCallback([](void *controller) {
     auto *flutter_view_controller =
         reinterpret_cast<flutter::FlutterViewController *>(controller);
+    // Shell stealth runs from DesktopMultiWindowSetSubWindowFirstPresentedCallback
+    // after the first frame is presented; do not change styles at HWND creation.
     auto *registry = flutter_view_controller->engine();
     TextureRgbaRendererPluginCApiRegisterWithRegistrar(
         registry->GetRegistrarForPlugin("TextureRgbaRendererPlugin"));
@@ -161,6 +174,13 @@ bool FlutterWindow::OnCreate() {
         [flutter_view_controller](
             const flutter::MethodCall<> &call,
             std::unique_ptr<flutter::MethodResult<>> result) {
+          if (call.method_name() == "applySubWindowStealth") {
+            HWND native =
+                flutter_view_controller->view()->GetNativeWindow();
+            RustDeskApplyShellStealth(native);
+            result->Success();
+            return;
+          }
           if (call.method_name() != "setOpacity") {
             result->NotImplemented();
             return;
@@ -191,17 +211,25 @@ bool FlutterWindow::OnCreate() {
     team_channel.release();
   });
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
+  RustDeskExcludeWindowFromScreenCapture(GetHandle());
+  RustDeskHideWindowFromTaskbar(GetHandle());
 
   // See the comment on kForceRedrawTimerId above.
-  flutter_controller_->engine()->SetNextFrameCallback(
-      [this]() { first_frame_rendered_ = true; });
+  flutter_controller_->engine()->SetNextFrameCallback([this]() {
+    first_frame_rendered_ = true;
+    RustDeskHideWindowFromTaskbar(GetHandle());
+  });
   SetTimer(GetHandle(), kForceRedrawTimerId, kForceRedrawIntervalMs, nullptr);
+  stealth_refresh_tries_ = 0;
+  SetTimer(GetHandle(), kStealthRefreshTimerId, kStealthRefreshIntervalMs,
+           nullptr);
 
   return true;
 }
 
 void FlutterWindow::OnDestroy() {
   KillTimer(GetHandle(), kForceRedrawTimerId);
+  KillTimer(GetHandle(), kStealthRefreshTimerId);
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
@@ -228,6 +256,13 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
       flutter_controller_->engine()->ReloadSystemFonts();
       break;
     case WM_TIMER:
+      if (wparam == kStealthRefreshTimerId) {
+        RustDeskHideWindowFromTaskbar(hwnd);
+        if (++stealth_refresh_tries_ >= kStealthRefreshMaxTries) {
+          KillTimer(hwnd, kStealthRefreshTimerId);
+        }
+        return 0;
+      }
       if (wparam == kForceRedrawTimerId) {
         if (!flutter_controller_) {
           KillTimer(hwnd, kForceRedrawTimerId);
@@ -259,6 +294,11 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
       }
       break;
     case WM_SHOWWINDOW:
+      if (wparam == TRUE) {
+        RustDeskHideWindowFromTaskbar(hwnd);
+        stealth_refresh_tries_ = 0;
+        SetTimer(hwnd, kStealthRefreshTimerId, kStealthRefreshIntervalMs, nullptr);
+      }
       // A window created hidden (e.g. the connection manager) may be shown
       // long after the creation-time force-redraw timer has given up, and
       // FancyZones moves windows exactly when they are shown. Re-arm the
@@ -267,6 +307,18 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
       if (wparam == TRUE && !first_frame_rendered_ && flutter_controller_) {
         force_redraw_tries_ = 0;
         SetTimer(hwnd, kForceRedrawTimerId, kForceRedrawIntervalMs, nullptr);
+      }
+      break;
+    case WM_WINDOWPOSCHANGING: {
+      auto* pos = reinterpret_cast<WINDOWPOS*>(lparam);
+      if (pos != nullptr && (pos->flags & SWP_SHOWWINDOW) != 0) {
+        RustDeskHideWindowFromTaskbar(hwnd);
+      }
+      break;
+    }
+    case WM_ACTIVATE:
+      if (LOWORD(wparam) != WA_INACTIVE) {
+        RustDeskHideWindowFromTaskbar(hwnd);
       }
       break;
   }

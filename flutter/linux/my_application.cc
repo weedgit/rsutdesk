@@ -5,6 +5,7 @@
 #include <flutter_linux/flutter_linux.h>
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
+#include <X11/Xlib.h>
 #endif
 #if defined(GDK_WINDOWING_WAYLAND) && defined(HAS_KEYBOARD_SHORTCUTS_INHIBIT)
 #include "wayland_shortcuts_inhibit.h"
@@ -87,6 +88,77 @@ static void side_buttons_init_for_window(GtkWindow* window, FlMethodChannel* cha
     G_CALLBACK(on_side_button_event), channel);
 }
 
+// Gtk has no portable equivalent to WDA_EXCLUDEFROMCAPTURE or NSWindowSharingNone.
+static void rustdesk_exclude_window_from_screen_capture(GtkWindow* window) {
+  (void)window;
+}
+
+#ifdef GDK_WINDOWING_X11
+static void rustdesk_x11_skip_switcher(GdkWindow* gdk_window) {
+  if (gdk_window == NULL || !GDK_IS_X11_WINDOW(gdk_window)) {
+    return;
+  }
+  GdkDisplay* gdk_display = gdk_window_get_display(gdk_window);
+  Display* display = gdk_x11_display_get_xdisplay(gdk_display);
+  Window xid = gdk_x11_window_get_xid(gdk_window);
+  Atom net_wm_state =
+      gdk_x11_get_xatom_by_name_for_display(gdk_display, "_NET_WM_STATE");
+  Atom skip_pager = gdk_x11_get_xatom_by_name_for_display(
+      gdk_display, "_NET_WM_STATE_SKIP_PAGER");
+  Atom skip_taskbar = gdk_x11_get_xatom_by_name_for_display(
+      gdk_display, "_NET_WM_STATE_SKIP_TASKBAR");
+
+  XEvent ev;
+  memset(&ev, 0, sizeof(ev));
+  ev.xclient.type = ClientMessage;
+  ev.xclient.send_event = True;
+  ev.xclient.display = display;
+  ev.xclient.window = xid;
+  ev.xclient.message_type = net_wm_state;
+  ev.xclient.format = 32;
+  ev.xclient.data.l[0] = 1;  // _NET_WM_STATE_ADD
+  ev.xclient.data.l[1] = skip_pager;
+  ev.xclient.data.l[2] = skip_taskbar;
+  ev.xclient.data.l[3] = 1;
+
+  Window root = DefaultRootWindow(display);
+  XSendEvent(display, root, False,
+             SubstructureRedirectMask | SubstructureNotifyMask, &ev);
+  XFlush(display);
+}
+#endif
+
+static void on_window_realize_hide_switcher(GtkWidget* widget, gpointer user_data) {
+  (void)user_data;
+#ifdef GDK_WINDOWING_X11
+  GdkWindow* gdk_window = gtk_widget_get_window(widget);
+  if (gdk_window != NULL) {
+    rustdesk_x11_skip_switcher(gdk_window);
+  }
+#endif
+}
+
+static void rustdesk_hide_window_from_taskbar(GtkWindow* window) {
+  if (window == NULL || !GTK_IS_WINDOW(window)) {
+    return;
+  }
+  gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
+  gtk_window_set_type_hint(window, GDK_WINDOW_TYPE_UTILITY);
+
+  GtkWidget* widget = GTK_WIDGET(window);
+  if (!gtk_widget_get_realized(widget)) {
+    g_signal_connect(widget, "realize", G_CALLBACK(on_window_realize_hide_switcher),
+                     NULL);
+    return;
+  }
+#ifdef GDK_WINDOWING_X11
+  GdkWindow* gdk_window = gtk_widget_get_window(widget);
+  if (gdk_window != NULL) {
+    rustdesk_x11_skip_switcher(gdk_window);
+  }
+#endif
+}
+
 static void on_subwindow_created(FlPluginRegistry* registry) {
 #if defined(GDK_WINDOWING_WAYLAND) && defined(HAS_KEYBOARD_SHORTCUTS_INHIBIT)
   wayland_shortcuts_inhibit_init_for_subwindow(registry);
@@ -96,6 +168,8 @@ static void on_subwindow_created(FlPluginRegistry* registry) {
   FlView* view = FL_VIEW(registry);
   GtkWidget* toplevel = gtk_widget_get_toplevel(GTK_WIDGET(view));
   if (toplevel != NULL && GTK_IS_WINDOW(toplevel)) {
+    rustdesk_exclude_window_from_screen_capture(GTK_WINDOW(toplevel));
+    rustdesk_hide_window_from_taskbar(GTK_WINDOW(toplevel));
     FlMethodChannel* channel = side_buttons_create_channel(fl_view_get_engine(view));
     if (channel == NULL) return;
     side_buttons_init_for_window(GTK_WINDOW(toplevel), channel);
@@ -169,6 +243,8 @@ static void my_application_activate(GApplication* application) {
   try_set_transparent(window, gtk_window_get_screen(window), view);
   gtk_widget_show(GTK_WIDGET(window));
   gtk_widget_show(GTK_WIDGET(view));
+  rustdesk_exclude_window_from_screen_capture(window);
+  rustdesk_hide_window_from_taskbar(window);
 
   // Register callback for sub-windows created by desktop_multi_window plugin.
   // Handles both Wayland shortcuts inhibition (guarded inside) and side button

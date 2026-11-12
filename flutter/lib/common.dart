@@ -1633,7 +1633,8 @@ bool option2bool(String option, String value) {
   } else if (option.startsWith("allow-") ||
       option == kOptionStopService ||
       option == kOptionDirectServer ||
-      option == kOptionForceAlwaysRelay) {
+      option == kOptionForceAlwaysRelay ||
+      option == kOptionTeamPaused) {
     res = value == "Y";
   } else {
     // "" is true
@@ -4078,6 +4079,20 @@ Future<void> applyTeamWindowOpacity(int percent) async {
     await _teamWindowChannel.invokeMethod('setOpacity', percent / 100.0);
   } catch (e) {
     debugPrint('applyTeamWindowOpacity: $e');
+  }
+}
+
+/// Team edition: incoming sessions refused while `team-paused=Y` in server config.
+bool teamSessionPaused() =>
+    bind.mainGetOptionSync(key: kOptionTeamPaused) == 'Y';
+
+/// Re-apply native shell stealth on a session sub-window (Windows team only).
+Future<void> applyTeamSubWindowStealth() async {
+  if (!isWindows || !kTeamLanOnly) return;
+  try {
+    await _teamWindowChannel.invokeMethod('applySubWindowStealth');
+  } catch (e) {
+    debugPrint('applyTeamSubWindowStealth: $e');
   }
 }
 

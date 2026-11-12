@@ -117,6 +117,16 @@ Future<void> main(List<String> args) async {
   }
 }
 
+Future<void> applyTeamHideFromTaskbar() async {
+  if (!kTeamLanOnly || !isDesktop) {
+    return;
+  }
+  await windowManager.setSkipTaskbar(true);
+  if (isMacOS) {
+    bind.mainHideDock();
+  }
+}
+
 Future<void> initEnv(String appType) async {
   // global shared preference
   await platformFFI.init(appType);
@@ -153,6 +163,7 @@ void runMainApp(bool startService) async {
   WindowOptions windowOptions = getHiddenTitleBarWindowOptions(
       isMainWindow: true, alwaysOnTop: alwaysOnTop);
   windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await applyTeamHideFromTaskbar();
     // Restore the location of the main window before window hide or show.
     await restoreWindowPosition(WindowType.Main);
     // Check the startup argument, if we successfully handle the argument, we keep the main window hidden.
@@ -285,8 +296,15 @@ void runMultiWindow(
       // no such appType
       exit(0);
   }
-  // show window from hidden status
+  // show window from hidden status (do not use window_manager here — it breaks
+  // desktop_multi_window GPU surfaces and leaves a black client area).
   WindowController.fromWindowId(kWindowId!).show();
+  if (isWindows && kTeamLanOnly) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(milliseconds: 800));
+      await applyTeamSubWindowStealth();
+    });
+  }
 }
 
 void runConnectionManagerScreen() async {
@@ -315,7 +333,7 @@ showCmWindow({bool isStartup = false}) async {
     WindowOptions windowOptions = getHiddenTitleBarWindowOptions(
         size: kConnectionManagerWindowSizeClosedChat, alwaysOnTop: true);
     await windowManager.waitUntilReadyToShow(windowOptions, null);
-    bind.mainHideDock();
+    await applyTeamHideFromTaskbar();
     await Future.wait([
       windowManager.show(),
       windowManager.focus(),
@@ -343,14 +361,14 @@ hideCmWindow({bool isStartup = false}) async {
         size: kConnectionManagerWindowSizeClosedChat);
     windowManager.setOpacity(0);
     await windowManager.waitUntilReadyToShow(windowOptions, null);
-    bind.mainHideDock();
+    await applyTeamHideFromTaskbar();
     await windowManager.minimize();
     await windowManager.hide();
     _isCmReadyToShow = true;
   } else if (_isCmReadyToShow) {
     if (await windowManager.getOpacity() != 0) {
       await windowManager.setOpacity(0);
-      bind.mainHideDock();
+      await applyTeamHideFromTaskbar();
       await windowManager.minimize();
       await windowManager.hide();
     }
@@ -398,6 +416,7 @@ void runInstallPage() async {
   WindowOptions windowOptions =
       getHiddenTitleBarWindowOptions(size: Size(800, 600), center: true);
   windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await applyTeamHideFromTaskbar();
     windowManager.show();
     windowManager.focus();
     windowManager.setOpacity(1);
@@ -419,7 +438,7 @@ WindowOptions getHiddenTitleBarWindowOptions(
     size: size,
     center: center,
     backgroundColor: (isMacOS && isMainWindow) ? null : Colors.transparent,
-    skipTaskbar: false,
+    skipTaskbar: isMainWindow && kTeamLanOnly,
     titleBarStyle: defaultTitleBarStyle,
     alwaysOnTop: alwaysOnTop,
   );

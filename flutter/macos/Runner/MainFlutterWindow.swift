@@ -19,6 +19,16 @@ import window_manager
 import window_size
 import texture_rgba_renderer
 
+/// Hides RustDesk windows from macOS screen recording and screen sharing (OBS, etc.).
+private func rustdeskExcludeWindowFromScreenCapture(_ window: NSWindow?) {
+    guard let window = window else { return }
+    if #available(macOS 10.15, *) {
+        window.sharingType = .none
+    }
+    // LSUIElement keeps the app out of Cmd+Tab; this omits the window from in-app window cycling.
+    window.collectionBehavior.insert(.ignoresCycle)
+}
+
 // Global state for relative mouse mode
 // All properties and methods must be accessed on the main thread since they
 // interact with NSEvent monitors, CoreGraphics APIs, and Flutter channels.
@@ -68,7 +78,10 @@ class MainFlutterWindow: NSWindow {
 
         RegisterGeneratedPlugins(registry: flutterViewController)
 
+        rustdeskExcludeWindowFromScreenCapture(self)
+
         FlutterMultiWindowPlugin.setOnWindowCreatedCallback { controller in
+            rustdeskExcludeWindowFromScreenCapture(controller.view?.window)
             // Register the plugin which you want access from other isolate.
             // DesktopLifecyclePlugin.register(with: controller.registrar(forPlugin: "DesktopLifecyclePlugin"))
             // Note: copy below from above RegisterGeneratedPlugins

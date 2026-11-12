@@ -1429,7 +1429,7 @@ impl Connection {
             if base::team::is_paused(&Config::get_option(base::team::OPTION_PAUSED)) {
                 log::info!("Rejected connection from {}: paused", addr.ip());
                 self.send_login_error(
-                    "This desktop is paused. Ask the person at it to resume RustDesk from its tray icon.",
+                    "This desktop is paused. On that PC, open RustDesk and tap Resume in the main window, or run: rustdesk.exe --team-resume",
                 )
                 .await;
                 return false;
@@ -2923,7 +2923,10 @@ impl Connection {
             });
             #[cfg(all(windows, feature = "flutter"))]
             std::thread::spawn(move || {
-                if crate::is_server() && !crate::check_process("--tray", false) {
+                if crate::is_server()
+                    && crate::common::should_run_tray_process()
+                    && !crate::check_process("--tray", false)
+                {
                     crate::platform::run_as_user(vec!["--tray"]).ok();
                 }
             });

@@ -171,7 +171,7 @@ class RustDeskMultiWindowManager {
         overrideType: type,
       ));
     }
-    if (isMacOS) {
+    if (isMacOS || isWindows) {
       Future.microtask(() => windowController.show());
     }
     registerActiveWindow(windowId);
@@ -192,6 +192,9 @@ class RustDeskMultiWindowManager {
       if (windows.isEmpty) {
         final windowId = await newSessionWindow(
             type, remoteId, msg, windows, screenRect != null);
+        if (isWindows) {
+          await windowOnTop(windowId);
+        }
         return MultiWindowCallResult(windowId, null);
       } else {
         return call(type, methodName, msg);
@@ -215,6 +218,9 @@ class RustDeskMultiWindowManager {
       }
       final windowId = await newSessionWindow(
           type, remoteId, msg, windows, screenRect != null);
+      if (isWindows) {
+        await windowOnTop(windowId);
+      }
       return MultiWindowCallResult(windowId, null);
     }
   }

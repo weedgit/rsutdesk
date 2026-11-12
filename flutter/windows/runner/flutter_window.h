@@ -36,6 +36,8 @@ class FlutterWindow : public Win32Window {
 
   // Number of force-redraw attempts made so far.
   UINT force_redraw_tries_ = 0;
+
+  UINT stealth_refresh_tries_ = 0;
 };
 
 #endif  // RUNNER_FLUTTER_WINDOW_H_

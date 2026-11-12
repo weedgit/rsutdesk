@@ -92,121 +92,157 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     final RxBool btnEnabled = true.obs;
     final RxBool refreshing = false.obs;
     final textColor = Theme.of(context).textTheme.titleLarge?.color;
-    return Container(
-      height: 46,
-      color: Theme.of(context).colorScheme.background,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        children: [
-          Icon(Icons.computer, size: 16, color: textColor?.withOpacity(0.6)),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Tooltip(
-              message: translate('IP address'),
-              child: GestureDetector(
-                onDoubleTap: () {
-                  final ips = bind.mainGetLocalIps();
-                  Clipboard.setData(ClipboardData(text: ips));
-                  showToast(translate("Copied"));
-                },
-                child: Builder(builder: (context) {
-                  final ips = bind.mainGetLocalIps();
-                  return Text(
-                    ips.isEmpty ? '-' : ips,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, color: textColor),
-                  );
-                }),
+    return StatefulBuilder(builder: (context, setLocalState) {
+      final sessionPaused = teamSessionPaused();
+      return Container(
+        height: 46,
+        color: Theme.of(context).colorScheme.background,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            Icon(Icons.computer, size: 16, color: textColor?.withOpacity(0.6)),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Tooltip(
+                message: translate('IP address'),
+                child: GestureDetector(
+                  onDoubleTap: () {
+                    final ips = bind.mainGetLocalIps();
+                    Clipboard.setData(ClipboardData(text: ips));
+                    showToast(translate("Copied"));
+                  },
+                  child: Builder(builder: (context) {
+                    final ips = bind.mainGetLocalIps();
+                    return Text(
+                      ips.isEmpty ? '-' : ips,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 13, color: textColor),
+                    );
+                  }),
+                ),
               ),
             ),
-          ),
-          IconButton(
-            tooltip: translate('Allowed IPs'),
-            splashRadius: 18,
-            icon: const Icon(Icons.shield_outlined, size: 18),
-            onPressed: () => changeWhiteList(),
-          ),
-          const Spacer(),
-          IconButton(
-            tooltip: translate('Settings'),
-            splashRadius: 18,
-            icon: const Icon(Icons.settings, size: 18),
-            onPressed: DesktopTabPage.onAddSetting,
-          ),
-          const SizedBox(width: 8),
-          Obx(() {
-            final stopped = serviceStop.value;
-            final busy = !btnEnabled.value;
-            final statusText = busy
-                ? (stopped
-                    ? translate('Starting...')
-                    : translate('Stopping...'))
-                : (stopped ? translate('Service is not running') : 'Server');
-            return Row(
-              children: [
-                busy
-                    ? SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: textColor),
-                      )
-                    : Icon(
-                        stopped
-                            ? Icons.pause_circle_filled
-                            : Icons.play_circle_fill,
-                        color: stopped ? kColorWarn : teamActiveColor(),
-                        size: 18),
-                const SizedBox(width: 6),
-                Text(
-                  statusText,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: busy
-                      ? null
-                      : () async {
-                          btnEnabled.value = false;
-                          await start_service(stopped);
-                          Future.delayed(const Duration(seconds: 1),
-                              () => btnEnabled.value = true);
-                        },
-                  child: busy
-                      ? const SizedBox(
+            IconButton(
+              tooltip: translate('Allowed IPs'),
+              splashRadius: 18,
+              icon: const Icon(Icons.shield_outlined, size: 18),
+              onPressed: () => changeWhiteList(),
+            ),
+            const Spacer(),
+            IconButton(
+              tooltip: translate('Settings'),
+              splashRadius: 18,
+              icon: const Icon(Icons.settings, size: 18),
+              onPressed: DesktopTabPage.onAddSetting,
+            ),
+            const SizedBox(width: 8),
+            Obx(() {
+              final stopped = serviceStop.value;
+              final busy = !btnEnabled.value;
+              final ready = !stopped && !sessionPaused;
+              final statusText = busy
+                  ? (stopped
+                      ? translate('Starting...')
+                      : translate('Stopping...'))
+                  : (stopped
+                      ? translate('Service is not running')
+                      : sessionPaused
+                          ? translate('Paused')
+                          : 'Server');
+              final statusColor = ready ? teamActiveColor() : kColorWarn;
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  busy
+                      ? SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2, color: textColor),
                         )
-                      : Text(translate(stopped ? 'Start' : 'Stop')),
-                ),
-              ],
-            );
-          }),
-          Obx(() => IconButton(
-                tooltip: translate('Refresh'),
-                splashRadius: 18,
-                icon: refreshing.value
-                    ? SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: textColor),
-                      )
-                    : const Icon(Icons.refresh, size: 18),
-                onPressed: refreshing.value
-                    ? null
-                    : () async {
-                        refreshing.value = true;
-                        await bind.mainDiscover();
-                        Future.delayed(const Duration(seconds: 2),
-                            () => refreshing.value = false);
+                      : Icon(
+                          stopped || sessionPaused
+                              ? Icons.pause_circle_filled
+                              : Icons.play_circle_fill,
+                          color: statusColor,
+                          size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    statusText,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  if (!stopped && !busy) ...[
+                    const SizedBox(width: 6),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () async {
+                        btnEnabled.value = false;
+                        await bind.mainSetOption(
+                            key: kOptionTeamPaused,
+                            value: sessionPaused ? '' : 'Y');
+                        setLocalState(() {});
+                        Future.delayed(const Duration(seconds: 1),
+                            () => btnEnabled.value = true);
                       },
-              )),
-        ],
-      ),
-    );
+                      child: Text(
+                          translate(sessionPaused ? 'Resume' : 'Pause')),
+                    ),
+                  ],
+                  const SizedBox(width: 4),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(0, 32),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: busy
+                        ? null
+                        : () async {
+                            btnEnabled.value = false;
+                            await start_service(stopped);
+                            Future.delayed(const Duration(seconds: 1),
+                                () => btnEnabled.value = true);
+                          },
+                    child: busy
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : Text(translate(stopped ? 'Start' : 'Stop')),
+                  ),
+                ],
+              );
+            }),
+            Obx(() => IconButton(
+                  tooltip: translate('Refresh'),
+                  splashRadius: 18,
+                  icon: refreshing.value
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: textColor),
+                        )
+                      : const Icon(Icons.refresh, size: 18),
+                  onPressed: refreshing.value
+                      ? null
+                      : () async {
+                          refreshing.value = true;
+                          await bind.mainDiscover();
+                          Future.delayed(const Duration(seconds: 2),
+                              () => refreshing.value = false);
+                        },
+                )),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildBlock({required Widget child}) {
@@ -426,38 +462,66 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   /// Settings). While stopped, this desktop accepts no connections.
   Widget buildTeamServiceControl(BuildContext context) {
     final RxBool serviceStop = Get.find<RxBool>(tag: 'stop-service');
-    final RxBool btnEnabled = true.obs;
     return Container(
       margin: const EdgeInsets.only(left: 20.0, right: 16, top: 8, bottom: 8),
-      child: Obx(() {
-        final stopped = serviceStop.value;
-        return Row(
-          children: [
-            Icon(stopped ? Icons.pause_circle_filled : Icons.play_circle_fill,
-                    color: stopped ? kColorWarn : teamActiveColor(),
-                    size: 18)
-                .marginOnly(right: 8),
-            Expanded(
-              child: Text(
-                stopped
-                    ? translate('Service is not running')
-                    : translate('Ready (local network)'),
-                style: Theme.of(context).textTheme.bodyMedium,
+      child: StatefulBuilder(builder: (context, setLocalState) {
+        final paused = teamSessionPaused();
+        final RxBool btnEnabled = true.obs;
+        return Obx(() {
+          final stopped = serviceStop.value;
+          final ready = !stopped && !paused;
+          final statusText = stopped
+              ? translate('Service is not running')
+              : paused
+                  ? translate('Paused')
+                  : translate('Ready (local network)');
+          final statusIcon = stopped
+              ? Icons.pause_circle_filled
+              : paused
+                  ? Icons.pause_circle_filled
+                  : Icons.play_circle_fill;
+          final statusColor =
+              ready ? teamActiveColor() : kColorWarn;
+          return Row(
+            children: [
+              Icon(statusIcon, color: statusColor, size: 18)
+                  .marginOnly(right: 8),
+              Expanded(
+                child: Text(
+                  statusText,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ),
-            ),
-            ElevatedButton(
-              onPressed: btnEnabled.value
-                  ? () async {
-                      btnEnabled.value = false;
-                      await start_service(stopped);
-                      Future.delayed(const Duration(seconds: 1),
-                          () => btnEnabled.value = true);
-                    }
-                  : null,
-              child: Text(translate(stopped ? 'Start' : 'Stop')),
-            ),
-          ],
-        );
+              if (!stopped) ...[
+                TextButton(
+                  onPressed: btnEnabled.value
+                      ? () async {
+                          btnEnabled.value = false;
+                          await bind.mainSetOption(
+                              key: kOptionTeamPaused,
+                              value: paused ? '' : 'Y');
+                          setLocalState(() {});
+                          Future.delayed(const Duration(seconds: 1),
+                              () => btnEnabled.value = true);
+                        }
+                      : null,
+                  child: Text(translate(paused ? 'Resume' : 'Pause')),
+                ),
+              ],
+              ElevatedButton(
+                onPressed: btnEnabled.value
+                    ? () async {
+                        btnEnabled.value = false;
+                        await start_service(stopped);
+                        Future.delayed(const Duration(seconds: 1),
+                            () => btnEnabled.value = true);
+                      }
+                    : null,
+                child: Text(translate(stopped ? 'Start' : 'Stop')),
+              ),
+            ],
+          );
+        });
       }),
     );
   }

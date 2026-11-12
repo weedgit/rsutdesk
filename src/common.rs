@@ -2763,7 +2763,7 @@ pub fn get_builtin_option(key: &str) -> String {
 
 /// Team edition: UI that only makes sense with an ID/relay/API server, or with passwords.
 /// Each is a stock "hide-*"/"remove-*" builtin option, so the Flutter UI already honors it.
-const TEAM_HIDDEN_UI: [&str; 9] = [
+const TEAM_HIDDEN_UI: [&str; 10] = [
     "hide-network-settings",
     "hide-server-settings",
     "hide-proxy-settings",
@@ -2774,7 +2774,15 @@ const TEAM_HIDDEN_UI: [&str; 9] = [
     // No remote printing and no session recording in the team edition.
     "hide-remote-printer-settings",
     "hide-recording-button",
+    // Stealth: no notification-area icon or "Service is running" tooltip.
+    keys::OPTION_HIDE_TRAY,
 ];
+
+/// Whether a `--tray` process should run (notification icon).
+#[inline]
+pub fn should_run_tray_process() -> bool {
+    get_builtin_option(keys::OPTION_HIDE_TRAY) != "Y"
+}
 
 #[inline]
 pub fn is_custom_client() -> bool {

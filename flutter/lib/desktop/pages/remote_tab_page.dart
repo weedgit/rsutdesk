@@ -446,6 +446,9 @@ class _ConnectionTabPageState extends State<ConnectionTabPage> {
             WindowType.RemoteDesktop, display, screenRect);
         Future.delayed(Duration(milliseconds: isWindows ? 100 : 0), () async {
           await windowOnTop(windowId());
+          if (isWindows && kTeamLanOnly) {
+            await applyTeamSubWindowStealth();
+          }
         });
       });
       ConnectionTypeState.init(id);

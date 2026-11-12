@@ -52,6 +52,10 @@ pub fn core_main() -> Option<CoreMainAction> {
         // return None to terminate the process
         return None;
     }
+    #[cfg(windows)]
+    if base::team::LAN_ONLY {
+        crate::platform::windows::suppress_team_tray_icon();
+    }
     let mut args = Vec::new();
     let mut flutter_args = Vec::new();
     let mut i = 0;
@@ -102,9 +106,13 @@ pub fn core_main() -> Option<CoreMainAction> {
         // Because `--server` process is the System user's process. We can't get the arguments in `check_process()`.
         // We can assume that self service running means the server is also running on Windows.
         #[cfg(target_os = "windows")]
-        let should_check_start_tray = crate::platform::is_self_service_running()
-            && crate::platform::is_cur_exe_the_installed();
-        if should_check_start_tray && !crate::check_process("--tray", true) {
+        let should_check_start_tray = (crate::platform::is_self_service_running()
+            && crate::platform::is_cur_exe_the_installed())
+            || base::team::LAN_ONLY;
+        if should_check_start_tray
+            && crate::common::should_run_tray_process()
+            && !crate::check_process("--tray", true)
+        {
             #[cfg(target_os = "linux")]
             hbb_common::allow_err!(crate::platform::check_autostart_config());
             hbb_common::allow_err!(crate::run_me(vec!["--tray"]));
@@ -365,8 +373,22 @@ pub fn core_main() -> Option<CoreMainAction> {
                 std::fs::remove_file(&args[1]).ok();
                 return None;
             }
+        } else if args[0] == "--team-resume" || args[0] == "--resume-team" {
+            if base::team::LAN_ONLY {
+                crate::ipc::set_option(base::team::OPTION_PAUSED, "");
+                log::info!("Team edition: resumed (accepting LAN connections)");
+            }
+            return None;
+        } else if args[0] == "--team-pause" {
+            if base::team::LAN_ONLY {
+                crate::ipc::set_option(base::team::OPTION_PAUSED, "Y");
+                log::info!("Team edition: paused (rejecting incoming sessions)");
+            }
+            return None;
         } else if args[0] == "--tray" {
-            if !crate::check_process("--tray", true) {
+            if crate::common::should_run_tray_process()
+                && !crate::check_process("--tray", true)
+            {
                 crate::tray::start_tray();
             }
             return None;
