@@ -17,6 +17,9 @@ pub const OPTION_ALLOWED_IPS: &str = "whitelist";
 /// open ones. Set from the tray; unlike "stop-service" it never uninstalls anything.
 pub const OPTION_PAUSED: &str = "team-paused";
 
+/// Only `Y` means paused. Do not use `hbb_common::config::option2bool` for
+/// [`OPTION_PAUSED`] (stock hbb_common treats empty as true). Flutter uses
+/// `option2bool` in `common.dart` with the same rule; Rust call sites use this.
 pub fn is_paused(value: &str) -> bool {
     value == "Y"
 }
