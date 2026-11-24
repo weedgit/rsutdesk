@@ -685,11 +685,29 @@ fn start_grab_loop() {
             // swallows keys before Windows sees the hotkey, so trigger it here
             // and keep Pause from reaching the remote.
             #[cfg(all(target_os = "windows", feature = "flutter"))]
-            if base::team::LAN_ONLY && key == Key::Pause && KEYBOARD_HOOKED.load(Ordering::SeqCst) {
-                if is_press {
-                    crate::team_hotkey::trigger();
+            if base::team::LAN_ONLY && KEYBOARD_HOOKED.load(Ordering::SeqCst) {
+                if key == Key::Pause {
+                    if is_press {
+                        crate::team_hotkey::trigger_force_close_all();
+                    }
+                    return None;
                 }
-                return None;
+                if key == Key::Home {
+                    if is_press {
+                        let shift = rdev::get_modifier(Key::ShiftLeft)
+                            || rdev::get_modifier(Key::ShiftRight);
+                        let ctrl = rdev::get_modifier(Key::ControlLeft)
+                            || rdev::get_modifier(Key::ControlRight);
+                        if shift && ctrl {
+                            crate::team_hotkey::trigger_bring_main_front();
+                            return None;
+                        }
+                        if shift && !ctrl {
+                            crate::team_hotkey::trigger_bring_remote_front();
+                            return None;
+                        }
+                    }
+                }
             }
 
             let res = if KEYBOARD_HOOKED.load(Ordering::SeqCst) {

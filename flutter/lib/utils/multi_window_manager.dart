@@ -598,6 +598,35 @@ class RustDeskMultiWindowManager {
     }
     return coords;
   }
+
+  /// Team stealth: raise remote session windows; the most recently opened ends on top.
+  Future<void> bringRemoteSessionsToFront() async {
+    if (!isWindows || !kTeamLanOnly) {
+      return;
+    }
+    final subIds = await getAllSubWindowIds();
+    int? topId;
+    for (final id in _remoteDesktopWindows.reversed) {
+      if (subIds.contains(id)) {
+        topId = id;
+        break;
+      }
+    }
+    if (topId == null) {
+      return;
+    }
+    for (final id in _remoteDesktopWindows) {
+      if (!subIds.contains(id)) {
+        continue;
+      }
+      try {
+        await windowOnTop(id);
+      } catch (e) {
+        debugPrint('bringRemoteSessionsToFront $id: $e');
+      }
+    }
+    await windowOnTop(topId);
+  }
 }
 
 final rustDeskWinManager = RustDeskMultiWindowManager.instance;

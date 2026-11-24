@@ -596,6 +596,12 @@ _registerEventHandler() {
   if (isWindows && desktopType == DesktopType.main && kTeamLanOnly) {
     platformFFI.registerEventHandler('force_close_all', 'force_close_all',
         (_) async => await forceCloseAllWindows());
+    platformFFI.registerEventHandler(
+        'bring_remote_front', 'bring_remote_front', (_) async {
+      await rustDeskWinManager.bringRemoteSessionsToFront();
+    });
+    platformFFI.registerEventHandler('bring_main_front', 'bring_main_front',
+        (_) async => await windowOnTop(null));
   }
   if (isAndroid) {
     platformFFI.registerEventHandler(

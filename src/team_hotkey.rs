@@ -1,45 +1,105 @@
-//! Team edition: system-wide "Force close all" hotkey (the Pause/Break key).
+//! Team edition: system-wide hotkeys on Windows (`RegisterHotKey`).
 //!
-//! Registered with Windows `RegisterHotKey`, so it fires whichever app is
-//! active. It cannot fire on the Windows lock screen: that is a separate
-//! secure desktop no normal app receives keys on. The main window handles the
-//! `force_close_all` event by closing every session window and hiding itself.
+//! - Shift + Home: bring remote session windows to the foreground (stealth UI has no tray).
+//! - Ctrl + Shift + Home: bring the main window to the foreground.
+//! - Pause/Break (unchanged): force close all sessions and hide the main window.
 //!
-//! While a remote session window has focus, RustDesk's keyboard grab swallows
-//! keys before Windows can turn them into a hotkey, so the grab calls
-//! [`trigger`] itself for Pause (see `start_grab_loop` in `keyboard.rs`).
+//! While a remote session has the keyboard grab, Windows may not deliver hotkeys; the grab
+//! loop in `keyboard.rs` calls the same triggers for Pause and Home with modifiers.
 
 use hbb_common::log;
 use std::sync::Once;
-use winapi::um::winuser::{GetMessageW, RegisterHotKey, MOD_NOREPEAT, MSG, VK_PAUSE, WM_HOTKEY};
+use winapi::um::winuser::{
+    GetMessageW, RegisterHotKey, MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT, MSG, VK_HOME, VK_PAUSE,
+    WM_HOTKEY,
+};
 
-const HOTKEY_ID: i32 = 0x5443; // any id unique within this process
+const HOTKEY_FORCE_CLOSE_ALL: i32 = 0x5443;
+const HOTKEY_BRING_REMOTE: i32 = 0x5444;
+const HOTKEY_BRING_MAIN: i32 = 0x5445;
 
 pub fn start() {
     static START: Once = Once::new();
     START.call_once(|| {
         std::thread::spawn(|| unsafe {
-            // Pause alone, no modifiers. MOD_NOREPEAT: holding the key fires once.
-            let mods = MOD_NOREPEAT as u32;
-            if RegisterHotKey(std::ptr::null_mut(), HOTKEY_ID, mods, VK_PAUSE as u32) == 0 {
-                log::warn!("Force close all hotkey not registered (used by another app?)");
+            let mut registered = 0;
+            if RegisterHotKey(
+                std::ptr::null_mut(),
+                HOTKEY_FORCE_CLOSE_ALL,
+                MOD_NOREPEAT as u32,
+                VK_PAUSE as u32,
+            ) != 0
+            {
+                registered += 1;
+                log::info!("Team hotkey: Pause → force close all");
+            } else {
+                log::warn!("Team hotkey: Pause not registered (used by another app?)");
+            }
+            if RegisterHotKey(
+                std::ptr::null_mut(),
+                HOTKEY_BRING_REMOTE,
+                MOD_NOREPEAT as u32 | MOD_SHIFT as u32,
+                VK_HOME as u32,
+            ) != 0
+            {
+                registered += 1;
+                log::info!("Team hotkey: Shift+Home → bring remote windows forward");
+            } else {
+                log::warn!("Team hotkey: Shift+Home not registered");
+            }
+            if RegisterHotKey(
+                std::ptr::null_mut(),
+                HOTKEY_BRING_MAIN,
+                MOD_NOREPEAT as u32 | MOD_SHIFT as u32 | MOD_CONTROL as u32,
+                VK_HOME as u32,
+            ) != 0
+            {
+                registered += 1;
+                log::info!("Team hotkey: Ctrl+Shift+Home → bring main window forward");
+            } else {
+                log::warn!("Team hotkey: Ctrl+Shift+Home not registered");
+            }
+            if registered == 0 {
                 return;
             }
-            log::info!("Force close all hotkey registered: Pause");
             let mut msg: MSG = std::mem::zeroed();
             while GetMessageW(&mut msg, std::ptr::null_mut(), 0, 0) > 0 {
-                if msg.message == WM_HOTKEY && msg.wParam as i32 == HOTKEY_ID {
-                    trigger();
+                if msg.message != WM_HOTKEY {
+                    continue;
+                }
+                match msg.wParam as i32 {
+                    HOTKEY_FORCE_CLOSE_ALL => trigger_force_close_all(),
+                    HOTKEY_BRING_REMOTE => trigger_bring_remote_front(),
+                    HOTKEY_BRING_MAIN => trigger_bring_main_front(),
+                    _ => {}
                 }
             }
         });
     });
 }
 
-/// Ask the main window to force close all session windows and hide itself.
-pub fn trigger() {
+pub fn trigger_force_close_all() {
     let _ = crate::flutter::push_global_event(
         crate::flutter::APP_TYPE_MAIN,
         r#"{"name":"force_close_all"}"#.to_owned(),
     );
+}
+
+pub fn trigger_bring_remote_front() {
+    let _ = crate::flutter::push_global_event(
+        crate::flutter::APP_TYPE_MAIN,
+        r#"{"name":"bring_remote_front"}"#.to_owned(),
+    );
+}
+
+pub fn trigger_bring_main_front() {
+    let _ = crate::flutter::push_global_event(
+        crate::flutter::APP_TYPE_MAIN,
+        r#"{"name":"bring_main_front"}"#.to_owned(),
+    );
+}
+
+/// Backwards-compatible name for the keyboard grab.
+pub fn trigger() {
+    trigger_force_close_all();
 }
