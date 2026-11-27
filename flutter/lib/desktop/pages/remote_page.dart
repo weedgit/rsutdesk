@@ -737,8 +737,12 @@ class _RemotePageState extends State<RemotePage>
           Container(
               color: kTeamLanOnly ? kTeamColorKey : kColorCanvas,
               child: Obx(() {
-                final opacity =
-                    stateGlobal.teamCanvasOpacity.value.clamp(0, 100) / 100.0;
+                final raw =
+                    stateGlobal.teamCanvasOpacity.value.clamp(0, 100);
+                // Below 20% the blended pixels no longer match the LWA_COLORKEY
+                // exactly, leaving a faint ghost instead of full transparency.
+                // Snap to 0 so the color-key background takes over cleanly.
+                final opacity = raw < 20 ? 0.0 : raw / 100.0;
                 return Opacity(
                   opacity: kTeamLanOnly ? opacity : 1.0,
                   child: RawKeyFocusScope(
