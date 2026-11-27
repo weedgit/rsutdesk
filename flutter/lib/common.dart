@@ -4091,7 +4091,7 @@ Future<void> toggleMinimizeAllWindows() async {
 
 // Team edition: opacity of remote session windows (percent, shared by all).
 const String kOptionTeamRemoteWindowOpacity = 'team-remote-window-opacity';
-const int kTeamRemoteWindowOpacityMin = 20;
+const int kTeamRemoteWindowOpacityMin = 0;
 const int kTeamRemoteWindowOpacityMax = 100;
 const _teamWindowChannel = MethodChannel('org.rustdesk.rustdesk/team_window');
 
@@ -4109,6 +4109,27 @@ Future<void> applyTeamWindowOpacity(int percent) async {
     await _teamWindowChannel.invokeMethod('setOpacity', percent / 100.0);
   } catch (e) {
     debugPrint('applyTeamWindowOpacity: $e');
+  }
+}
+
+const int kTeamOpacityStep = 10;
+
+/// Change remote window opacity by [delta]% on all sub-windows.
+Future<void> adjustTeamOpacity(int delta) async {
+  final cur = getTeamRemoteWindowOpacity();
+  final next = (cur + delta).clamp(
+      kTeamRemoteWindowOpacityMin, kTeamRemoteWindowOpacityMax);
+  if (next == cur) return;
+  bind.mainSetLocalOption(
+      key: kOptionTeamRemoteWindowOpacity, value: next.toString());
+  final subIds = await rustDeskWinManager.getAllSubWindowIds();
+  for (final id in subIds) {
+    try {
+      await DesktopMultiWindow.invokeMethod(
+          id, kWindowEventTeamOpacity, next);
+    } catch (e) {
+      debugPrint('adjustTeamOpacity sub $id: $e');
+    }
   }
 }
 

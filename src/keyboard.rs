@@ -688,18 +688,31 @@ fn start_grab_loop() {
             if base::team::LAN_ONLY && KEYBOARD_HOOKED.load(Ordering::SeqCst) {
                 if key == Key::Pause {
                     if is_press {
-                        crate::team_hotkey::trigger();
+                        crate::team_hotkey::trigger_force_close();
                     }
                     return None;
                 }
-                if key == Key::ScrollLock
-                    && (rdev::get_modifier(Key::ShiftLeft)
-                        || rdev::get_modifier(Key::ShiftRight))
-                {
-                    if is_press {
-                        crate::team_hotkey::trigger_toggle_minimize();
+                let shift_held = rdev::get_modifier(Key::ShiftLeft)
+                    || rdev::get_modifier(Key::ShiftRight);
+                if shift_held {
+                    let handled = match key {
+                        Key::ScrollLock => {
+                            if is_press { crate::team_hotkey::trigger_toggle_minimize(); }
+                            true
+                        }
+                        Key::Home => {
+                            if is_press { crate::team_hotkey::trigger_opacity_down(); }
+                            true
+                        }
+                        Key::End => {
+                            if is_press { crate::team_hotkey::trigger_opacity_up(); }
+                            true
+                        }
+                        _ => false,
+                    };
+                    if handled {
+                        return None;
                     }
-                    return None;
                 }
             }
 

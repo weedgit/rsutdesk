@@ -558,6 +558,11 @@ class _ConnectionTabPageState extends State<ConnectionTabPage> {
       }
     } else if (call.method == kWindowEventSetFullscreen) {
       stateGlobal.setFullscreen(call.arguments == 'true');
+    } else if (call.method == kWindowEventTeamOpacity) {
+      final percent = call.arguments as int?;
+      if (percent != null) {
+        applyTeamWindowOpacity(percent);
+      }
     }
     _update_remote_count();
     return returnValue;

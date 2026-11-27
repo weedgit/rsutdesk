@@ -191,7 +191,7 @@ bool FlutterWindow::OnCreate() {
             return;
           }
           double opacity = *value;
-          if (opacity < 0.1) opacity = 0.1;
+          if (opacity < 0.0) opacity = 0.0;
           if (opacity > 1.0) opacity = 1.0;
           HWND hwnd = ::GetAncestor(
               flutter_view_controller->view()->GetNativeWindow(), GA_ROOT);

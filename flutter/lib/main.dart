@@ -599,6 +599,10 @@ _registerEventHandler() {
     platformFFI.registerEventHandler(
         'toggle_minimize', 'toggle_minimize',
         (_) async => await toggleMinimizeAllWindows());
+    platformFFI.registerEventHandler('opacity_down', 'opacity_down',
+        (_) async => await adjustTeamOpacity(-kTeamOpacityStep));
+    platformFFI.registerEventHandler('opacity_up', 'opacity_up',
+        (_) async => await adjustTeamOpacity(kTeamOpacityStep));
   }
   if (isAndroid) {
     platformFFI.registerEventHandler(
