@@ -34,6 +34,9 @@ class StateGlobal {
   // Note: This is session-only runtime state, NOT persisted to config.
   final RxMap<String, bool> relativeMouseModeState = <String, bool>{}.obs;
 
+  // Team edition: canvas opacity driven from Flutter (0–100).
+  final RxInt teamCanvasOpacity = 100.obs;
+
   // Use for desktop -> remote toolbar -> resolution
   final Map<String, Map<int, String?>> _lastResolutionGroupValues = {};
 

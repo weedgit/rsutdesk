@@ -735,8 +735,13 @@ class _RemotePageState extends State<RemotePage>
       return Stack(
         children: [
           Container(
-              color: kColorCanvas,
-              child: RawKeyFocusScope(
+              color: kTeamLanOnly ? kTeamColorKey : kColorCanvas,
+              child: Obx(() {
+                final opacity =
+                    stateGlobal.teamCanvasOpacity.value.clamp(0, 100) / 100.0;
+                return Opacity(
+                  opacity: kTeamLanOnly ? opacity : 1.0,
+                  child: RawKeyFocusScope(
                   focusNode: _rawKeyFocusNode,
                   onFocusChange: (bool imageFocused) {
                     debugPrint(
@@ -759,7 +764,9 @@ class _RemotePageState extends State<RemotePage>
                     }
                   },
                   inputModel: _ffi.inputModel,
-                  child: getBodyForDesktop(context))),
+                  child: getBodyForDesktop(context)),
+                );
+              })),
           Stack(
             children: [
               _ffi.ffiModel.pi.isSet.isTrue &&
@@ -800,7 +807,9 @@ class _RemotePageState extends State<RemotePage>
     }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: kTeamLanOnly
+          ? kTeamColorKey
+          : Theme.of(context).colorScheme.background,
       body: Obx(() {
         final imageReady = _ffi.ffiModel.pi.isSet.isTrue &&
             _ffi.ffiModel.waitForFirstImage.isFalse;

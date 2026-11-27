@@ -279,6 +279,10 @@ const String kEnvPortableExecutable = "RUSTDESK_APPNAME";
 
 const Color kColorWarn = Color.fromARGB(255, 158, 158, 158);
 const Color kColorCanvas = Colors.black;
+// Team edition: color key for LWA_COLORKEY transparency. Pixels matching this
+// exact color become see-through; everything else (toolbar) stays opaque.
+// RGB(1,0,1) is visually indistinguishable from black.
+const Color kTeamColorKey = Color(0xFF010001);
 
 const int kMobileDefaultDisplayWidth = 720;
 const int kMobileDefaultDisplayHeight = 1280;

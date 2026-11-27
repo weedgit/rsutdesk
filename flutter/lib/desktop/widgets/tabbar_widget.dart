@@ -586,7 +586,8 @@ class _DesktopTabState extends State<DesktopTab>
               }
             }())));
     if (tabType == DesktopTabType.remoteScreen) {
-      return Container(color: kColorCanvas, child: child);
+      return Container(
+          color: kTeamLanOnly ? kTeamColorKey : kColorCanvas, child: child);
     } else {
       return child;
     }

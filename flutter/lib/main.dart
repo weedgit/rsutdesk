@@ -265,7 +265,7 @@ void runMultiWindow(
       if (kTeamLanOnly) {
         final opacity = getTeamRemoteWindowOpacity();
         if (opacity < kTeamRemoteWindowOpacityMax) {
-          await applyTeamWindowOpacity(opacity);
+          applyTeamWindowOpacity(opacity);
         }
       }
       break;

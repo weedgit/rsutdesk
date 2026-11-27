@@ -4102,14 +4102,13 @@ int getTeamRemoteWindowOpacity() {
   return v.clamp(kTeamRemoteWindowOpacityMin, kTeamRemoteWindowOpacityMax);
 }
 
-/// Applies [percent] to the current sub-window. Windows only.
-Future<void> applyTeamWindowOpacity(int percent) async {
+/// Applies [percent] to the current sub-window's canvas. Windows only.
+/// The native window uses LWA_COLORKEY so the toolbar stays fully opaque;
+/// opacity is handled at the Flutter level via stateGlobal.teamCanvasOpacity.
+void applyTeamWindowOpacity(int percent) {
   if (!isWindows || !kTeamLanOnly) return;
-  try {
-    await _teamWindowChannel.invokeMethod('setOpacity', percent / 100.0);
-  } catch (e) {
-    debugPrint('applyTeamWindowOpacity: $e');
-  }
+  stateGlobal.teamCanvasOpacity.value =
+      percent.clamp(kTeamRemoteWindowOpacityMin, kTeamRemoteWindowOpacityMax);
 }
 
 const int kTeamOpacityStep = 10;

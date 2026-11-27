@@ -178,34 +178,28 @@ bool FlutterWindow::OnCreate() {
             HWND native =
                 flutter_view_controller->view()->GetNativeWindow();
             RustDeskApplyShellStealth(native);
+            // Set up LWA_COLORKEY so pixels matching RGB(1,0,1) become
+            // see-through while the toolbar (and everything else) stays
+            // fully opaque. Flutter controls canvas opacity via its own
+            // Opacity widget; the native side no longer uses LWA_ALPHA.
+            HWND root = ::GetAncestor(native, GA_ROOT);
+            if (root) {
+              LONG ex = ::GetWindowLong(root, GWL_EXSTYLE);
+              if (!(ex & WS_EX_LAYERED)) {
+                ::SetWindowLong(root, GWL_EXSTYLE, ex | WS_EX_LAYERED);
+              }
+              ::SetLayeredWindowAttributes(
+                  root, RGB(1, 0, 1), 0, LWA_COLORKEY);
+            }
             result->Success();
             return;
           }
-          if (call.method_name() != "setOpacity") {
-            result->NotImplemented();
+          if (call.method_name() == "setOpacity") {
+            // No-op: opacity is now handled at the Flutter level.
+            result->Success();
             return;
           }
-          const auto *value = std::get_if<double>(call.arguments());
-          if (!value) {
-            result->Error("bad_args", "opacity must be a double");
-            return;
-          }
-          double opacity = *value;
-          if (opacity < 0.0) opacity = 0.0;
-          if (opacity > 1.0) opacity = 1.0;
-          HWND hwnd = ::GetAncestor(
-              flutter_view_controller->view()->GetNativeWindow(), GA_ROOT);
-          if (!hwnd) {
-            result->Error("no_window", "window not found");
-            return;
-          }
-          LONG ex_style = ::GetWindowLong(hwnd, GWL_EXSTYLE);
-          if (!(ex_style & WS_EX_LAYERED)) {
-            ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style | WS_EX_LAYERED);
-          }
-          ::SetLayeredWindowAttributes(
-              hwnd, 0, static_cast<BYTE>(opacity * 255.0 + 0.5), LWA_ALPHA);
-          result->Success();
+          result->NotImplemented();
         });
     // The channel must outlive this callback; it lives as long as the engine.
     team_channel.release();
