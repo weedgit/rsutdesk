@@ -681,15 +681,26 @@ fn start_grab_loop() {
                 return None;
             }
 
-            // Team edition: Pause is Force close all. A focused session window
-            // swallows keys before Windows sees the hotkey, so trigger it here
-            // and keep Pause from reaching the remote.
+            // Team edition: global hotkeys. A focused session window swallows
+            // keys before Windows sees the hotkey, so trigger them here and
+            // keep the keys from reaching the remote.
             #[cfg(all(target_os = "windows", feature = "flutter"))]
-            if base::team::LAN_ONLY && key == Key::Pause && KEYBOARD_HOOKED.load(Ordering::SeqCst) {
-                if is_press {
-                    crate::team_hotkey::trigger();
+            if base::team::LAN_ONLY && KEYBOARD_HOOKED.load(Ordering::SeqCst) {
+                if key == Key::Pause {
+                    if is_press {
+                        crate::team_hotkey::trigger();
+                    }
+                    return None;
                 }
-                return None;
+                if key == Key::ScrollLock
+                    && (rdev::get_modifier(Key::ShiftLeft)
+                        || rdev::get_modifier(Key::ShiftRight))
+                {
+                    if is_press {
+                        crate::team_hotkey::trigger_toggle_minimize();
+                    }
+                    return None;
+                }
             }
 
             let res = if KEYBOARD_HOOKED.load(Ordering::SeqCst) {

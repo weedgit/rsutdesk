@@ -4059,6 +4059,36 @@ Future<void> forceCloseAllWindows() async {
   await windowManager.hide();
 }
 
+/// Team edition "Toggle minimize": minimize all windows if any is visible,
+/// restore them if all are minimized/hidden. Shift+ScrollLock global hotkey.
+Future<void> toggleMinimizeAllWindows() async {
+  if (stateGlobal.isMinimized) {
+    await windowManager.restore();
+    await windowManager.show();
+    await windowManager.focus();
+    final subIds = await rustDeskWinManager.getAllSubWindowIds();
+    for (final id in subIds) {
+      try {
+        WindowController.fromWindowId(id)
+          ..show()
+          ..focus();
+      } catch (e) {
+        debugPrint('toggleMinimizeAllWindows restore sub $id: $e');
+      }
+    }
+  } else {
+    final subIds = await rustDeskWinManager.getAllSubWindowIds();
+    for (final id in subIds) {
+      try {
+        await WindowController.fromWindowId(id).minimize();
+      } catch (e) {
+        debugPrint('toggleMinimizeAllWindows minimize sub $id: $e');
+      }
+    }
+    await windowManager.minimize();
+  }
+}
+
 // Team edition: opacity of remote session windows (percent, shared by all).
 const String kOptionTeamRemoteWindowOpacity = 'team-remote-window-opacity';
 const int kTeamRemoteWindowOpacityMin = 20;

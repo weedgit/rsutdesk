@@ -591,11 +591,14 @@ _registerEventHandler() {
       reloadAllWindows();
     });
   }
-  // Team edition: system-wide Force close all hotkey (Pause/Break),
-  // registered in Rust so it works while another app is active.
+  // Team edition: system-wide hotkeys registered in Rust so they work
+  // while another app is active.
   if (isWindows && desktopType == DesktopType.main && kTeamLanOnly) {
     platformFFI.registerEventHandler('force_close_all', 'force_close_all',
         (_) async => await forceCloseAllWindows());
+    platformFFI.registerEventHandler(
+        'toggle_minimize', 'toggle_minimize',
+        (_) async => await toggleMinimizeAllWindows());
   }
   if (isAndroid) {
     platformFFI.registerEventHandler(
