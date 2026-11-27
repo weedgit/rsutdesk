@@ -22,17 +22,6 @@ constexpr PROPERTYKEY kPkeyAppUserModelIsSystemComponent{
     5,
 };
 
-// Unowned top-level windows are forced into the taskbar, Alt+Tab and Win+Tab when shown.
-HWND StealthOwnerWindow() {
-  static HWND owner = nullptr;
-  if (owner == nullptr) {
-    owner = ::CreateWindowExW(
-        WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, L"STATIC", L"", WS_POPUP, 0, 0, 0,
-        0, HWND_MESSAGE, nullptr, ::GetModuleHandleW(nullptr), nullptr);
-  }
-  return owner;
-}
-
 void ApplyDwmSwitchExclusions(HWND root) {
   BOOL on = TRUE;
   ::DwmSetWindowAttribute(root, DWMWA_DISALLOW_PEEK, &on, sizeof(on));
@@ -77,6 +66,54 @@ void UnregisterFromTaskbar(HWND root) {
   }
 }
 
+// Hidden message-only window used only as the desktop anchor's owner,
+// keeping the anchor out of Alt+Tab.
+HWND StealthOwnerWindow() {
+  static HWND owner = nullptr;
+  if (owner == nullptr) {
+    owner = ::CreateWindowExW(
+        WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, L"STATIC", L"", WS_POPUP, 0, 0, 0,
+        0, HWND_MESSAGE, nullptr, ::GetModuleHandleW(nullptr), nullptr);
+  }
+  return owner;
+}
+
+// 1x1 transparent window that the virtual desktop system tracks.
+// All RustDesk windows are owned by this anchor, which achieves two things:
+//   1. They stay on one virtual desktop (they follow the anchor).
+//   2. They are hidden from Alt+Tab (owned + no WS_EX_APPWINDOW).
+// The anchor itself is owned by StealthOwnerWindow() so it too is
+// hidden from Alt+Tab.
+HWND DesktopAnchorWindow() {
+  static HWND anchor = nullptr;
+  if (anchor != nullptr && ::IsWindow(anchor)) {
+    return anchor;
+  }
+  anchor = ::CreateWindowExW(
+      WS_EX_NOACTIVATE | WS_EX_TRANSPARENT | WS_EX_LAYERED,
+      L"STATIC", L"",
+      WS_POPUP,
+      0, 0, 1, 1,
+      nullptr, nullptr, ::GetModuleHandleW(nullptr), nullptr);
+  if (anchor) {
+    // Own by the message-only stealth window so the anchor is hidden
+    // from Alt+Tab (it has an owner and no WS_EX_APPWINDOW).
+    HWND stealth = StealthOwnerWindow();
+    if (stealth) {
+      ::SetWindowLongPtr(anchor, GWLP_HWNDPARENT,
+                         reinterpret_cast<LONG_PTR>(stealth));
+    }
+    // Fully transparent — invisible but present for desktop tracking.
+    ::SetLayeredWindowAttributes(anchor, 0, 0, LWA_ALPHA);
+    // Must be visible for the virtual desktop system to track it.
+    ::ShowWindow(anchor, SW_SHOWNOACTIVATE);
+    UnregisterFromTaskbar(anchor);
+    ApplyDwmSwitchExclusions(anchor);
+    ApplyShellSystemComponent(anchor);
+  }
+  return anchor;
+}
+
 }  // namespace
 
 namespace {
@@ -89,21 +126,24 @@ HWND RootWindow(HWND hwnd) {
   return root ? root : hwnd;
 }
 
-void ApplyShellStealthToRoot(HWND root, bool reparent_to_message_owner) {
+void ApplyShellStealthToRoot(HWND root) {
   if (!root) {
     return;
   }
-  if (reparent_to_message_owner) {
-    HWND owner = StealthOwnerWindow();
-    if (owner != nullptr) {
-      ::SetWindowLongPtr(root, GWLP_HWNDPARENT,
-                         reinterpret_cast<LONG_PTR>(owner));
-    }
+  // Own by the desktop anchor so the window stays on one virtual desktop
+  // and is hidden from Alt+Tab (owned + no WS_EX_APPWINDOW).
+  HWND anchor = DesktopAnchorWindow();
+  if (anchor) {
+    ::SetWindowLongPtr(root, GWLP_HWNDPARENT,
+                       reinterpret_cast<LONG_PTR>(anchor));
   }
 
   LONG_PTR style = ::GetWindowLongPtr(root, GWL_EXSTYLE);
-  style |= WS_EX_TOOLWINDOW;
-  style &= ~WS_EX_APPWINDOW;
+  // Clear WS_EX_TOOLWINDOW: it hides from Alt+Tab but makes windows float
+  // across ALL virtual desktops. The owner relationship handles Alt+Tab
+  // hiding instead, while letting the virtual desktop system pin the
+  // window to one desktop.
+  style &= ~(WS_EX_APPWINDOW | WS_EX_TOOLWINDOW);
   ::SetWindowLongPtr(root, GWL_EXSTYLE, style);
 
   ::SetWindowPos(root, nullptr, 0, 0, 0, 0,
@@ -118,12 +158,12 @@ void ApplyShellStealthToRoot(HWND root, bool reparent_to_message_owner) {
 }  // namespace
 
 void RustDeskHideWindowFromTaskbar(HWND hwnd) {
-  ApplyShellStealthToRoot(RootWindow(hwnd), true);
+  ApplyShellStealthToRoot(RootWindow(hwnd));
 }
 
 void RustDeskApplyShellStealth(HWND hwnd) {
   HWND root = RootWindow(hwnd);
-  ApplyShellStealthToRoot(root, false);
+  ApplyShellStealthToRoot(root);
   // After the first frame (see desktop_multi_window callback); at HWND creation
   // this breaks Flutter GPU surfaces (black client area).
   RustDeskExcludeWindowFromScreenCapture(root);
