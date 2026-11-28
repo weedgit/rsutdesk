@@ -586,8 +586,10 @@ class _DesktopTabState extends State<DesktopTab>
               }
             }())));
     if (tabType == DesktopTabType.remoteScreen) {
-      return Container(
-          color: kTeamLanOnly ? kTeamColorKey : kColorCanvas, child: child);
+      // Team edition: transparency is a uniform native window alpha
+      // (LWA_ALPHA), so paint a normal canvas background; the tab bar fades
+      // together with the whole window via the OS.
+      return Container(color: kColorCanvas, child: child);
     } else {
       return child;
     }

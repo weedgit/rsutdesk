@@ -61,6 +61,9 @@ const String kAppTypeDesktopFileTransfer = "file transfer";
 const String kAppTypeDesktopViewCamera = "view camera";
 const String kAppTypeDesktopPortForward = "port forward";
 const String kAppTypeDesktopTerminal = "terminal";
+// Team edition: a separate always-opaque window that hosts the remote toolbar
+// over a semi-transparent (LWA_ALPHA) session window.
+const String kAppTypeDesktopRemoteToolbar = "remote toolbar";
 
 const String kWindowMainWindowOnTop = "main_window_on_top";
 const String kWindowRefreshCurrentUser = "refresh_current_user";
@@ -87,6 +90,9 @@ const String kWindowEventGetSessionIdList = "get_session_id_list";
 const String kWindowEventRemoteWindowCoords = "remote_window_coords";
 const String kWindowEventSetFullscreen = "set_fullscreen";
 
+// Team edition: a command forwarded from the satellite toolbar window to its
+// session window (lock / ctrl-alt-del / refresh / fullscreen / disconnect).
+const String kWindowEventTeamToolbarCmd = "team_toolbar_cmd";
 const String kWindowEventMoveTabToNewWindow = "move_tab_to_new_window";
 const String kWindowEventGetCachedSessionData = "get_cached_session_data";
 const String kWindowEventOpenMonitorSession = "open_monitor_session";

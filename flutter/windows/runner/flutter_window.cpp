@@ -23,6 +23,32 @@
 
 namespace {
 
+// Team edition: current window alpha (0-255), shared by all session windows.
+// Opacity is global across sessions, so a single value is sufficient.
+BYTE g_team_alpha = 255;
+
+// Minimum alpha we ever apply. A fully transparent (alpha 0) layered window is
+// click-through - mouse goes to the window behind it - so at 0 the remote would
+// lose input. This floor keeps the window hit-testable (so input still reaches
+// the remote) while ~1% alpha looks essentially invisible.
+const BYTE kTeamMinAlpha = 3;
+
+// Make the whole window a uniform-alpha layered window via LWA_ALPHA and apply
+// the current alpha. LWA_ALPHA does real OS alpha blending with the desktop
+// behind it (smoothly see-through at any value, no color-key artifacts) and
+// keeps the window hit-testable at every alpha - including 0 - so the remote
+// session keeps mouse/keyboard control even when invisible. The whole window
+// (tab bar included) fades together.
+void ApplyTeamWindowAlpha(HWND native) {
+  HWND root = ::GetAncestor(native, GA_ROOT);
+  if (!root) return;
+  LONG ex = ::GetWindowLong(root, GWL_EXSTYLE);
+  if (!(ex & WS_EX_LAYERED)) {
+    ::SetWindowLong(root, GWL_EXSTYLE, ex | WS_EX_LAYERED);
+  }
+  ::SetLayeredWindowAttributes(root, 0, g_team_alpha, LWA_ALPHA);
+}
+
 // If the window is resized between the creation of the Flutter surface and the
 // present of the first frame - which is what the PowerToys FancyZones option
 // "Move newly created windows to their last known zone" does - the embedder's
@@ -178,24 +204,50 @@ bool FlutterWindow::OnCreate() {
             HWND native =
                 flutter_view_controller->view()->GetNativeWindow();
             RustDeskApplyShellStealth(native);
-            // Set up LWA_COLORKEY so pixels matching RGB(1,0,1) become
-            // see-through while the toolbar (and everything else) stays
-            // fully opaque. Flutter controls canvas opacity via its own
-            // Opacity widget; the native side no longer uses LWA_ALPHA.
-            HWND root = ::GetAncestor(native, GA_ROOT);
-            if (root) {
-              LONG ex = ::GetWindowLong(root, GWL_EXSTYLE);
-              if (!(ex & WS_EX_LAYERED)) {
-                ::SetWindowLong(root, GWL_EXSTYLE, ex | WS_EX_LAYERED);
-              }
-              ::SetLayeredWindowAttributes(
-                  root, RGB(1, 0, 1), 0, LWA_COLORKEY);
-            }
+            // Make the whole window a uniform-alpha layered window and apply
+            // the last requested opacity. LWA_ALPHA does real OS alpha blending
+            // (smoothly see-through, no color-key artifacts) and keeps the
+            // window hit-testable at any opacity, so input still reaches the
+            // remote even when the window is fully transparent.
+            ApplyTeamWindowAlpha(native);
             result->Success();
             return;
           }
           if (call.method_name() == "setOpacity") {
-            // No-op: opacity is now handled at the Flutter level.
+            int percent = 100;
+            const flutter::EncodableValue *args = call.arguments();
+            if (const auto *p = std::get_if<int32_t>(args)) {
+              percent = *p;
+            } else if (const auto *p64 = std::get_if<int64_t>(args)) {
+              percent = static_cast<int>(*p64);
+            }
+            if (percent < 0) percent = 0;
+            if (percent > 100) percent = 100;
+            BYTE a = static_cast<BYTE>(percent * 255 / 100);
+            // A layered window at alpha 0 is click-through: Windows routes the
+            // mouse to the window BEHIND it, so the remote would lose input at
+            // 0 (the user would control their local desktop instead). Keep a
+            // minimal non-zero alpha so the window stays hit-testable while
+            // looking essentially invisible.
+            if (a < kTeamMinAlpha) a = kTeamMinAlpha;
+            g_team_alpha = a;
+            HWND native =
+                flutter_view_controller->view()->GetNativeWindow();
+            ApplyTeamWindowAlpha(native);
+            result->Success();
+            return;
+          }
+          if (call.method_name() == "setAlwaysOnTop") {
+            // Team edition: keep the satellite toolbar window above everything,
+            // including a borderless-fullscreen session window, so it stays
+            // reachable. (desktop_multi_window has no always-on-top API.)
+            HWND native =
+                flutter_view_controller->view()->GetNativeWindow();
+            HWND root = ::GetAncestor(native, GA_ROOT);
+            if (root) {
+              ::SetWindowPos(root, HWND_TOPMOST, 0, 0, 0, 0,
+                             SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            }
             result->Success();
             return;
           }

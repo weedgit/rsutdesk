@@ -4102,13 +4102,19 @@ int getTeamRemoteWindowOpacity() {
   return v.clamp(kTeamRemoteWindowOpacityMin, kTeamRemoteWindowOpacityMax);
 }
 
-/// Applies [percent] to the current sub-window's canvas. Windows only.
-/// The native window uses LWA_COLORKEY so the toolbar stays fully opaque;
-/// opacity is handled at the Flutter level via stateGlobal.teamCanvasOpacity.
+/// Applies [percent] opacity to the current sub-window. Windows only.
+/// The native window uses LWA_ALPHA (uniform whole-window alpha), so this is a
+/// real OS-level fade: smooth at every value (no color-key artifacts), truly
+/// see-through at 0 while still capturing input so the remote stays
+/// controllable. The whole window - tab bar included - fades together.
 void applyTeamWindowOpacity(int percent) {
   if (!isWindows || !kTeamLanOnly) return;
-  stateGlobal.teamCanvasOpacity.value =
+  final p =
       percent.clamp(kTeamRemoteWindowOpacityMin, kTeamRemoteWindowOpacityMax);
+  stateGlobal.teamCanvasOpacity.value = p;
+  _teamWindowChannel.invokeMethod('setOpacity', p).catchError((e) {
+    debugPrint('applyTeamWindowOpacity setOpacity: $e');
+  });
 }
 
 const int kTeamOpacityStep = 10;

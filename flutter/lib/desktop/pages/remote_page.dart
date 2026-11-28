@@ -735,13 +735,12 @@ class _RemotePageState extends State<RemotePage>
       return Stack(
         children: [
           Container(
-              color: kTeamLanOnly ? kTeamColorKey : kColorCanvas,
-              child: Obx(() {
-                final opacity =
-                    stateGlobal.teamCanvasOpacity.value.clamp(0, 100) / 100.0;
-                return Opacity(
-                  opacity: kTeamLanOnly ? opacity : 1.0,
-                  child: RawKeyFocusScope(
+              // Team edition: window transparency is a uniform native alpha
+              // (LWA_ALPHA, see applyTeamWindowOpacity), so paint the canvas at
+              // full opacity on a normal background; the OS fades the whole
+              // window - tab bar included - and no Flutter Opacity is used.
+              color: kColorCanvas,
+              child: RawKeyFocusScope(
                   focusNode: _rawKeyFocusNode,
                   onFocusChange: (bool imageFocused) {
                     debugPrint(
@@ -764,9 +763,7 @@ class _RemotePageState extends State<RemotePage>
                     }
                   },
                   inputModel: _ffi.inputModel,
-                  child: getBodyForDesktop(context)),
-                );
-              })),
+                  child: getBodyForDesktop(context))),
           Stack(
             children: [
               _ffi.ffiModel.pi.isSet.isTrue &&
@@ -808,7 +805,7 @@ class _RemotePageState extends State<RemotePage>
 
     return Scaffold(
       backgroundColor: kTeamLanOnly
-          ? kTeamColorKey
+          ? kColorCanvas
           : Theme.of(context).colorScheme.background,
       body: Obx(() {
         final imageReady = _ffi.ffiModel.pi.isSet.isTrue &&

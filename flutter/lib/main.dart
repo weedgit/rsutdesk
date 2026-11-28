@@ -15,6 +15,7 @@ import 'package:flutter_hbb/desktop/screen/desktop_view_camera_screen.dart';
 import 'package:flutter_hbb/desktop/screen/desktop_port_forward_screen.dart';
 import 'package:flutter_hbb/desktop/screen/desktop_remote_screen.dart';
 import 'package:flutter_hbb/desktop/screen/desktop_terminal_screen.dart';
+import 'package:flutter_hbb/desktop/screen/team_toolbar_window_screen.dart';
 import 'package:flutter_hbb/desktop/widgets/refresh_wrapper.dart';
 import 'package:flutter_hbb/models/state_model.dart';
 import 'package:flutter_hbb/utils/multi_window_manager.dart';
@@ -96,6 +97,15 @@ Future<void> main(List<String> args) async {
           argument,
           kAppTypeDesktopTerminal,
         );
+        break;
+      case WindowType.RemoteToolbar:
+        // Team edition: separate always-opaque toolbar window (satellite).
+        desktopType = DesktopType.remote;
+        runMultiWindow(
+          argument,
+          kAppTypeDesktopRemoteToolbar,
+        );
+        break;
       default:
         break;
     }
@@ -236,6 +246,12 @@ void runMultiWindow(
         params: argument,
       );
       break;
+    case kAppTypeDesktopRemoteToolbar:
+      // Team edition: separate always-opaque toolbar window (satellite).
+      widget = TeamToolbarWindowScreen(
+        params: argument,
+      );
+      break;
     default:
       // no such appType
       exit(0);
@@ -251,8 +267,45 @@ void runMultiWindow(
   }
   switch (appType) {
     case kAppTypeDesktopRemote:
-      // If screen rect is set, the window will be moved to the target screen and then set fullscreen.
-      if (argument['screen_rect'] == null) {
+      if (kTeamLanOnly) {
+        // Team edition: ignore the saved position/fullscreen state (a session
+        // closed while fullscreen must NOT reopen fullscreen). Always open
+        // windowed at a default size on the home monitor; fullscreen is only
+        // entered from the session tab bar. This runs AFTER the window is up,
+        // so it reliably overrides any OS-restored fullscreen - unlike the
+        // frame set before the window opened in newSessionWindow.
+        final wc = WindowController.fromWindowId(kWindowId!);
+        await wc.setFullscreen(false);
+        stateGlobal.setFullscreen(false, procWnd: false);
+        const w = 500.0, h = 500.0;
+        final hm = argument['team_home_monitor'];
+        Rect frame;
+        if (hm != null) {
+          final l = (hm['l'] as num).toDouble();
+          final t = (hm['t'] as num).toDouble();
+          final r = (hm['r'] as num).toDouble();
+          final b = (hm['b'] as num).toDouble();
+          frame = Rect.fromLTWH(
+              l + ((r - l) - w) / 2, t + ((b - t) - h) / 2, w, h);
+        } else {
+          frame = const Rect.fromLTWH(120, 120, w, h);
+        }
+        await wc.setFrame(frame);
+        // Re-assert shortly after, in case the window restores fullscreen late
+        // (the OS/plugin can re-apply the previous fullscreen state after the
+        // first frame).
+        Future.delayed(const Duration(milliseconds: 450), () async {
+          try {
+            await wc.setFullscreen(false);
+            stateGlobal.setFullscreen(false, procWnd: false);
+            await wc.setFrame(frame);
+          } catch (_) {}
+        });
+        bind.mainSetLocalOption(
+            key: kOptionTeamRemoteWindowOpacity,
+            value: kTeamRemoteWindowOpacityMax.toString());
+        applyTeamWindowOpacity(kTeamRemoteWindowOpacityMax);
+      } else if (argument['screen_rect'] == null) {
         // display can be used to control the offset of the window.
         await restoreWindowPosition(
           WindowType.RemoteDesktop,
@@ -260,13 +313,6 @@ void runMultiWindow(
           peerId: argument['id'] as String?,
           display: argument['display'] as int?,
         );
-      }
-      // Team edition: restore the saved remote window opacity.
-      if (kTeamLanOnly) {
-        final opacity = getTeamRemoteWindowOpacity();
-        if (opacity < kTeamRemoteWindowOpacityMax) {
-          applyTeamWindowOpacity(opacity);
-        }
       }
       break;
     case kAppTypeDesktopFileTransfer:
@@ -291,6 +337,12 @@ void runMultiWindow(
       break;
     case kAppTypeDesktopTerminal:
       await restoreWindowPosition(WindowType.Terminal, windowId: kWindowId!);
+      break;
+    case kAppTypeDesktopRemoteToolbar:
+      // Team edition: satellite toolbar window. No window-position restore;
+      // it is positioned over its session window. Must NOT hit the default
+      // `exit(0)` below - all windows share one process, so exiting here would
+      // terminate the whole app (home window included).
       break;
     default:
       // no such appType

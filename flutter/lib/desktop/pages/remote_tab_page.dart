@@ -563,6 +563,51 @@ class _ConnectionTabPageState extends State<ConnectionTabPage> {
       if (percent != null) {
         applyTeamWindowOpacity(percent);
       }
+    } else if (call.method == kWindowEventTeamToolbarCmd) {
+      // Team edition: a command forwarded from the satellite toolbar window,
+      // executed here on the real session FFI.
+      final args = call.arguments is String
+          ? jsonDecode(call.arguments)
+          : call.arguments;
+      final cmd = args['cmd'] as String?;
+      final peerId = args['id'] as String?;
+      if (cmd == 'defaultsize') {
+        // Team edition: the satellite toolbar's button restores the session
+        // window to a default size (un-minimize + exit fullscreen). It never
+        // makes it fullscreen - fullscreen is only entered from the tab bar.
+        final wc = WindowController.fromWindowId(windowId());
+        if (stateGlobal.fullscreen.isTrue) {
+          await wc.setFullscreen(false);
+          stateGlobal.setFullscreen(false, procWnd: false);
+        }
+        try {
+          await wc.show();
+        } catch (_) {}
+        await wc.setFrame(const Rect.fromLTWH(0, 0, 500, 500));
+        await wc.center();
+      } else if (peerId != null) {
+        if (cmd == 'disconnect') {
+          tabController.closeBy(peerId);
+        } else {
+          final page = tabController.widget(peerId);
+          if (page is RemotePage) {
+            final sid = page.ffi.sessionId;
+            switch (cmd) {
+              case 'lock':
+                bind.sessionLockScreen(sessionId: sid);
+                break;
+              case 'cad':
+                bind.sessionCtrlAltDel(sessionId: sid);
+                break;
+              case 'refresh':
+                bind.sessionRefresh(
+                    sessionId: sid,
+                    display: page.ffi.ffiModel.pi.currentDisplay);
+                break;
+            }
+          }
+        }
+      }
     }
     _update_remote_count();
     return returnValue;

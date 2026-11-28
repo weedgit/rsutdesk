@@ -1761,10 +1761,9 @@ class _DisplayMenuState extends State<_DisplayMenu> {
     menuChildrenGetter(_IconSubmenuButtonState state) {
       final menuChildren = <Widget>[
         _screenAdjustor.adjustWindow(context),
-        if (kTeamLanOnly && isWindows) ...[
-          const _WindowOpacityControl(),
-          Divider(),
-        ],
+        // Team edition: window opacity is controlled from the separate
+        // always-opaque toolbar window now, so the in-session slider (which
+        // fades with the session) is removed to avoid a duplicate control.
         viewStyle(customPercent: _customPercent),
         scrollStyle(state, colorScheme),
         imageQuality(),

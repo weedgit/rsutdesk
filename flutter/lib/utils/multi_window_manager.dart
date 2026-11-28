@@ -8,6 +8,31 @@ import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/common.dart';
 import 'package:flutter_hbb/main.dart';
 import 'package:flutter_hbb/models/input_model.dart';
+import 'package:window_size/window_size.dart' as window_size;
+
+// Team edition: the default size (logical px) of a session window and its
+// satellite toolbar window.
+const double kTeamSessionDefaultW = 500;
+const double kTeamSessionDefaultH = 500;
+
+// Team edition: the visible frame of the monitor that currently holds the main
+// (home) window, so session + toolbar windows open on the same monitor. Runs
+// in the MAIN window thread, so getWindowInfo() reports the main window. Using
+// window_size for BOTH the window's screen and the screen frame keeps the
+// coordinate systems consistent (mixing window_manager.getBounds with
+// window_size screens picks the wrong monitor on multi-display setups).
+Future<Rect?> teamHomeMonitorFrame() async {
+  try {
+    final info = await window_size.getWindowInfo();
+    final screen = info.screen;
+    if (screen != null) return screen.visibleFrame;
+    final screens = await window_size.getScreenList();
+    if (screens.isNotEmpty) return screens.first.visibleFrame;
+  } catch (e) {
+    debugPrint('teamHomeMonitorFrame: $e');
+  }
+  return null;
+}
 
 /// must keep the order
 // ignore: constant_identifier_names
@@ -18,7 +43,10 @@ enum WindowType {
   ViewCamera,
   PortForward,
   Terminal,
-  Unknown
+  Unknown,
+  // Team edition: separate always-opaque toolbar window for a session.
+  // Placed AFTER Unknown so existing indices (used in IPC) do not shift.
+  RemoteToolbar,
 }
 
 extension Index on int {
@@ -36,6 +64,8 @@ extension Index on int {
         return WindowType.PortForward;
       case 5:
         return WindowType.Terminal;
+      case 7:
+        return WindowType.RemoteToolbar;
       default:
         return WindowType.Unknown;
     }
@@ -65,6 +95,9 @@ class RustDeskMultiWindowManager {
   final List<int> _viewCameraWindows = List.empty(growable: true);
   final List<int> _portForwardWindows = List.empty(growable: true);
   final List<int> _terminalWindows = List.empty(growable: true);
+  // Team edition: session window id -> its satellite toolbar window id.
+  // Kept OUT of the active-window lifecycle so it never affects app close.
+  final Map<int, int> _toolbarForSessionWindow = {};
 
   moveTabToNewWindow(int windowId, String peerId, String sessionId,
       WindowType windowType) async {
@@ -151,12 +184,40 @@ class RustDeskMultiWindowManager {
     List<int> windows,
     bool withScreenRect,
   ) async {
-    final windowController = await DesktopMultiWindow.createWindow(msg);
+    var windowMsg = msg;
+    if (kTeamLanOnly && type == WindowType.RemoteDesktop) {
+      // Team edition: pass the home monitor into the new window so it can open
+      // at a default size on the same monitor as home, and never restore the
+      // closed fullscreen/position state. The session window applies this in
+      // its own startup (main.dart), which is the only place that reliably runs
+      // AFTER the window (which may restore fullscreen) is up.
+      try {
+        final hm = await teamHomeMonitorFrame();
+        if (hm != null) {
+          final m = jsonDecode(msg) as Map<String, dynamic>;
+          m['team_home_monitor'] = {
+            'l': hm.left,
+            't': hm.top,
+            'r': hm.right,
+            'b': hm.bottom,
+          };
+          windowMsg = jsonEncode(m);
+        }
+      } catch (e) {
+        debugPrint('inject team_home_monitor: $e');
+      }
+    }
+    final windowController = await DesktopMultiWindow.createWindow(windowMsg);
     if (isWindows) {
       windowController.setInitBackgroundColor(Colors.black);
     }
     final windowId = windowController.windowId;
-    if (!withScreenRect) {
+    if (kTeamLanOnly && type == WindowType.RemoteDesktop && !withScreenRect) {
+      // Frame/fullscreen is handled by the session window's own startup; just
+      // set the title here.
+      windowController
+          .setTitle(getWindowNameWithId(remoteId, overrideType: type));
+    } else if (!withScreenRect) {
       windowController
         ..setFrame(const Offset(0, 0) &
             Size(1280 + windowId * 20, 720 + windowId * 20))
@@ -176,7 +237,52 @@ class RustDeskMultiWindowManager {
     }
     registerActiveWindow(windowId);
     windows.add(windowId);
+    if (kTeamLanOnly && type == WindowType.RemoteDesktop) {
+      // Team edition: open the separate always-opaque toolbar window as a
+      // satellite of this session window. Fire-and-forget; errors are swallowed
+      // so it can never affect the session window just created.
+      openTeamToolbarWindow(remoteId, windowId).catchError((e) {
+        debugPrint('openTeamToolbarWindow failed: $e');
+        return null;
+      });
+    }
     return windowId;
+  }
+
+  // Team edition: open a separate always-opaque toolbar window bound to a
+  // session window. Must be called in the main window thread.
+  //
+  // IMPORTANT: this is a *satellite* window. It is deliberately NOT registered
+  // via registerActiveWindow and NOT added to any window-type list, so it never
+  // participates in the active-window lifecycle (`onActiveWindowChanged` closes
+  // the app when the active set empties). It stays fully opaque while the
+  // session window fades (LWA_ALPHA).
+  Future<int?> openTeamToolbarWindow(String peerId, int sessionWindowId) async {
+    if (!kTeamLanOnly) return null;
+    final existing = _toolbarForSessionWindow[sessionWindowId];
+    if (existing != null) return existing;
+    final msg = jsonEncode({
+      'type': WindowType.RemoteToolbar.index,
+      'id': peerId,
+      'session_window_id': sessionWindowId,
+    });
+    final controller = await DesktopMultiWindow.createWindow(msg);
+    if (isWindows) {
+      controller.setInitBackgroundColor(Colors.black);
+    }
+    final wid = controller.windowId;
+    const double tw = 760, th = 60, margin = 24;
+    final hm = await teamHomeMonitorFrame();
+    final frame = hm != null
+        ? Rect.fromLTWH(
+            hm.right - tw - margin, hm.bottom - th - margin, tw, th)
+        : const Rect.fromLTWH(200, 200, tw, th);
+    controller
+      ..setFrame(frame)
+      ..setTitle('Toolbar');
+    Future.microtask(() => controller.show());
+    _toolbarForSessionWindow[sessionWindowId] = wid;
+    return wid;
   }
 
   Future<MultiWindowCallResult> _newSession(
@@ -437,6 +543,9 @@ class RustDeskMultiWindowManager {
         return _portForwardWindows;
       case WindowType.Terminal:
         return _terminalWindows;
+      case WindowType.RemoteToolbar:
+        // Satellite window: not tracked in the active-window lifecycle.
+        break;
       case WindowType.Unknown:
         break;
     }
@@ -461,6 +570,9 @@ class RustDeskMultiWindowManager {
         break;
       case WindowType.Terminal:
         _terminalWindows.clear();
+        break;
+      case WindowType.RemoteToolbar:
+        break;
       case WindowType.Unknown:
         break;
     }
